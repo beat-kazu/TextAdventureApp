@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>冒険スタート</title>
+</head>
+<body>
+<p th:text="${scene.message}">ここにストーリーテキスト</p>
+
+<!-- choices があるときだけフォームを表示 -->
+<div th:if="${#lists.size(scene.choices) > 0}">
+  <form th:action="@{/choice}" method="post">
+    <input type="hidden" name="currentScene" th:value="${scene.id}"/>
+    <!-- ★前のシーン ID も送信 -->
+    <input type="hidden" name="previousScene" th:value="${scene.previousSceneId}"/>
+
+    <div th:each="c : ${scene.choices}">
+      <input type="radio" name="selected" th:value="${c}" th:id="${c}" required/>
+      <label th:for="${c}" th:text="${c}">選択肢</label><br/>
+    </div>
+
+    <button type="submit">決定</button>
+  </form>
+</div>
+
+<!-- choices が空（＝ゲーム終了）ならホームリンク -->
+<div th:if="${#lists.isEmpty(scene.choices)}">
+  <p>ゲーム終了です。お疲れさまでした！</p>
+  <a th:href="@{/home}">ホームに戻る</a>
+</div>
+</body>
+</html>
