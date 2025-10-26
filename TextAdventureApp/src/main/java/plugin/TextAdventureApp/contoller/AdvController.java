@@ -81,6 +81,52 @@ public class AdvController {
     model.addAttribute("scene", next);
     return "game";
   }
+
+  // ======================================
+  // ▼ ゲストモード用の追加部分
+  // ======================================
+
+  @GetMapping("/guest/start")
+  public String guestStart(Model model, HttpSession session) {
+    // セッション初期化（ゲスト専用）
+    session.removeAttribute("playerItems");
+    session.setAttribute("playerItems", new HashSet<String>());
+    session.setAttribute("guestMode", true);
+
+    SceneData scene = sceneService.getScene("start");
+    model.addAttribute("scene", scene);
+    model.addAttribute("isGuest", true);  // Thymeleaf 側でゲスト表記など出したいとき用
+    return "game";
+  }
+
+  @PostMapping("/guest/choice")
+  public String guestChoice(@RequestParam String selected,
+      @RequestParam String currentScene,
+      @RequestParam(required=false) String previousScene,
+      Model model,
+      HttpSession session) {
+
+    @SuppressWarnings("unchecked")
+    Set<String> playerItems = (Set<String>) session.getAttribute("playerItems");
+    if (playerItems == null) {
+      playerItems = new HashSet<>();
+      session.setAttribute("playerItems", playerItems);
+    }
+
+    SceneData next = sceneService.getNextScene(currentScene, selected, previousScene, playerItems);
+
+    if ("GameOver".equals(selected)) {
+      session.removeAttribute("playerItems");
+      session.removeAttribute("guestMode");
+      return "redirect:/home";
+    }
+
+    model.addAttribute("scene", next);
+    model.addAttribute("isGuest", true);
+    return "game";
+  }
+
+
   private void resetGameSession(HttpSession session) {
     // 既存ログインセッションを維持しつつ、ゲームデータのみ初期化
     session.setAttribute("playerItems", new HashSet<String>());
