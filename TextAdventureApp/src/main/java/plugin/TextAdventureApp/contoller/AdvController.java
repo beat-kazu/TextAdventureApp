@@ -13,20 +13,36 @@ import org.springframework.web.bind.annotation.RequestParam;
 import plugin.TextAdventureApp.data.SceneData;
 import plugin.TextAdventureApp.service.SceneService;
 
+/**
+ * テキストアドベンチャーゲームの画面遷移、プレイ進行を制御するクラス
+ */
 @Controller
 public class AdvController {
 
   private final SceneService sceneService;
 
+  /**
+   * AdvControllerのコンストラクタ。sceneServiceのインスタンスを受け取っています。
+   * @param sceneService　sceneService
+   */
   public AdvController(SceneService sceneService) {
     this.sceneService = sceneService;
   }
 
+  /**
+   * ログイン画面を表示します。
+   * @return　ログインページ（login.html）を返します。
+   */
   @GetMapping("/login")
   public String login() {
     return "login";
   }
 
+  /**
+   * ホーム画面を表示し、プレイヤーのアイテムデータを初期化します。
+   * @param session HTTPセッション
+   * @return ホーム画面(home.html）を返します。
+   */
   @GetMapping({"/", "/home"})
   public String home(HttpSession session) {
     // プレイヤーのアイテムをリセット
@@ -36,7 +52,12 @@ public class AdvController {
     return "home";
   }
 
-
+  /**
+   * ゲームを開始し、最初のシーンを表示します。
+   * @param model ブラウザにデータを渡すためのオブジェクト
+   * @param session　プレイヤーのアイテムなどを保持するセッション
+   * @return　ゲーム画面(start.html）を返します。
+   */
   @GetMapping("/start")
   public String start(Model model, HttpSession session) {
     //resetGameSession(session);
@@ -51,6 +72,15 @@ public class AdvController {
     return "game";
   }
 
+  /**
+   * プレイヤーの選択肢を処理し、次のシーンへ遷移します。
+   * @param selected 現在の選択肢
+   * @param currentScene 現在のシーンID
+   * @param previousScene 直前のシーンID
+   * @param model ブラウザにデータを渡すためのオブジェクト
+   * @param session プレイヤーのアイテムなどを保持するセッション
+   * @return 次のシーン画面、またはGameOver時のホーム画面へのリダイレクト
+   */
   @PostMapping("/choice")
   public String choice(@RequestParam String selected,
                        @RequestParam String currentScene,
@@ -82,9 +112,9 @@ public class AdvController {
     return "game";
   }
 
-  // ======================================
-  // ▼ ゲストモード用の追加部分
-  // ======================================
+  // ================================================
+  // ▼ ゲストモード用の追加部分　ベースは通常時と同じ為docは略
+  // ================================================
 
   @GetMapping("/guest/start")
   public String guestStart(Model model, HttpSession session) {
@@ -126,7 +156,10 @@ public class AdvController {
     return "game";
   }
 
-
+  /**
+   * ゲーム進行情報をリセットします（ログインセッションは維持）。
+   * @param session 現在のHTTPセッション
+   */
   private void resetGameSession(HttpSession session) {
     // 既存ログインセッションを維持しつつ、ゲームデータのみ初期化
     session.setAttribute("playerItems", new HashSet<String>());

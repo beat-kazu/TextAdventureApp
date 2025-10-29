@@ -13,6 +13,9 @@ import lombok.Setter;
 @Getter
 @Setter
 
+/**
+ * プレイヤー情報のDBテーブルの構成を定義
+ */
 @Entity  // DBテーブルと対応することを示す
 @Table(name = "player_data", uniqueConstraints = @UniqueConstraint(columnNames = "username"))  // 対応テーブル名
 public class PlayerData {

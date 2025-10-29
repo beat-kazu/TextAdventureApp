@@ -10,10 +10,16 @@ import java.util.SplittableRandom;
 import org.springframework.stereotype.Service;
 import plugin.TextAdventureApp.data.SceneData;
 
+/**
+ * ゲームの場面遷移を制御するクラス
+ */
 @Service
 public class SceneService{
   private Map<String, SceneData> scenes = new HashMap<>();
 
+  /**
+   * ゲーム開始時に呼び出される初期化メソッド
+   */
   @PostConstruct
   public void init() {
     SceneData start = new SceneData("start","あなたは暗い森にいます。どちらに進みますか？");
@@ -73,7 +79,11 @@ public class SceneService{
     scenes.put("end", end);
   }
 
-
+  /**
+   * 指定されたシーンIDに対応する"SceneData"を取得する
+   * @param id　取得したいシーンのID
+   * @return　対応する"SceneData"オブジェクト
+   */
   public SceneData getScene(String id) {
     //SceneData scene = scenes.getOrDefault(id, scenes.get("end"));
     SceneData original = scenes.getOrDefault(id, scenes.get("end"));
@@ -95,6 +105,15 @@ public class SceneService{
     }
     return scene;
   }
+
+  /**
+   * 選択肢に対応した次のシーン場面を返すメソッド
+   * @param currentId　現在のシーンID
+   * @param choice　プレイヤーの選んだ選択肢
+   * @param previousId　ひとつ前のシーンID
+   * @param playerItems　プレイヤーの所持アイテム
+   * @return　次に表示するシーン
+   */
   public SceneData getNextScene(String currentId, String choice, String previousId,Set<String> playerItems) {
     SceneData current = scenes.get(currentId);
     if (current == null) return scenes.get("end");
@@ -123,6 +142,11 @@ public class SceneService{
     }
     return next;
   }
+
+  /**
+   * 登録済のシーンを返すメソッド
+   * @return　シーンIDに紐づいた全SceneData
+   */
   public Map<String, SceneData> getScenes() {
     return scenes;
   }

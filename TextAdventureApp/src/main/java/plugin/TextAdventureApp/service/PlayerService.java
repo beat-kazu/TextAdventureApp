@@ -7,6 +7,9 @@ import org.springframework.stereotype.Service;
 import plugin.TextAdventureApp.data.PlayerData;
 import plugin.TextAdventureApp.repository.PlayerRepository;
 
+/**
+ * DBにプレーヤー情報を登録するクラス
+ */
 @Service
 public class PlayerService {
 
@@ -16,6 +19,10 @@ public class PlayerService {
   @Autowired
   private PasswordEncoder passwordEncoder;
 
+  /**
+   * プレーヤー情報を重複チェックや暗号化などをして、DBに登録するメソッド
+   * @param player　ログインフォームから入力されたプレーヤー情報
+   */
   // 新規登録処理
   public void registerPlayer(PlayerData  player){
 

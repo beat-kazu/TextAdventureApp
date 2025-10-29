@@ -5,7 +5,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import plugin.TextAdventureApp.data.PlayerData;
 
-// Entityクラス（PlayerData）を扱うRepositoryの定義
+/**
+ * JpaRepositoryを継承して、プレーヤー情報に関するデータベース操作を行うインターフェース
+ */
 @Repository
 public interface PlayerRepository extends JpaRepository<PlayerData, Long > {
 

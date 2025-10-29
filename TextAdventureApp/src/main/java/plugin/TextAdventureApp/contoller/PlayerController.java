@@ -14,21 +14,32 @@ import plugin.TextAdventureApp.data.SceneData;
 import plugin.TextAdventureApp.repository.PlayerRepository;
 import plugin.TextAdventureApp.service.PlayerService;
 
-
+/**
+ * ブラウザとのプレーヤー登録リクエスト(POST/GET)を処理するクラス
+ */
 @Controller
 public class PlayerController {
 
   @Autowired
   private PlayerService service;
 
-  // 登録画面の表示
+  /**
+   * プレイヤー登録フォームをブラウザに表示する処理をするメソッド
+   * @param model　画面(ブラウザ)にデータを渡すためのオブジェクト
+   * @return　register.htmlという画面を表示
+   */
   @GetMapping("/register")
   public String showForm(Model model) {
     model.addAttribute("player", new PlayerData());
     return "register";  // register.html に対応
   }
 
-  // 登録処理
+  /**
+   *　入力されたプレイヤー情報を登録処理を行うメソッド
+   * @param player　プレイヤー情報
+   * @param model　画面(ブラウザ)にデータを渡すためのオブジェクト
+   * @return　login.html/register.html(エラーメッセージ)という画面を表示
+   */
   @PostMapping("/register")
   public String register(@ModelAttribute("player") PlayerData player, Model model) {
 
