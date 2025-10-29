@@ -4,11 +4,15 @@
   <title>冒険スタート</title>
 </head>
 <body>
+<p th:if="${isGuest}"
+   style="position: absolute; top: 8px; right: 12px; font-size: 0.9em; color: #ccc;">
+  （ゲストプレイ中）
+</p>
 <p th:text="${scene.message}">ここにストーリーテキスト</p>
 
 <!-- choices があるときだけフォームを表示 -->
 <div th:if="${#lists.size(scene.choices) > 0}">
-  <form th:action="@{/choice}" method="post">
+  <form th:action="${isGuest} ? @{/guest/choice} : @{/choice}" method="post">
     <input type="hidden" name="currentScene" th:value="${scene.id}"/>
     <!-- ★前のシーン ID も送信 -->
     <input type="hidden" name="previousScene" th:value="${scene.previousSceneId}"/>

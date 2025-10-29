@@ -36,7 +36,8 @@ public class SecurityConfig {
           )
           .formLogin(form -> form
               .loginPage("/login")      // ログインページのパス
-              .defaultSuccessUrl("/home", true) // ログイン成功後の遷移先
+              //.defaultSuccessUrl("/home", true) // ログイン成功後の遷移先
+              .defaultSuccessUrl("/start", true) // ログイン成功後の遷移先
               .permitAll()
           )
           .logout(logout -> logout.permitAll());
