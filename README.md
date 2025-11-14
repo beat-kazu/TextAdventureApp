@@ -28,7 +28,7 @@ Webアプリゲーム「テキストアドベンチャーゲーム」に関す�
 * 設計言語：Oracle JDK　Java21  
 * 作業環境：Windows 11(24H2)
 * MySql：mysql バージョン	8.0.42
-* Spling Boot：バージョン	3.5.6
+* Spring Boot：バージョン	3.5.6
 
 ## データベース構成
 * データベース内構造
