@@ -1,17 +1,13 @@
-package plugin.TextAdventureApp.contoller;
+package plugin.TextAdventureApp.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import plugin.TextAdventureApp.data.PlayerData;
 import org.springframework.ui.Model;
-import plugin.TextAdventureApp.data.SceneData;
-import plugin.TextAdventureApp.repository.PlayerRepository;
 import plugin.TextAdventureApp.service.PlayerService;
 
 /**
@@ -31,7 +27,7 @@ public class PlayerController {
   @GetMapping("/register")
   public String showForm(Model model) {
     model.addAttribute("player", new PlayerData());
-    return "register";  // register.html に対応
+    return "register";
   }
 
   /**
@@ -46,9 +42,9 @@ public class PlayerController {
     try {
       service.registerPlayer(player);
       model.addAttribute("message", "登録が完了しました！");
-      return "login"; //"register_success";  // 成功画面（またはリダイレクト）
+      return "login";
     } catch (IllegalArgumentException e) {
-      model.addAttribute("message", e.getMessage()); // 重複エラー等
+      model.addAttribute("message", e.getMessage());
       return "register";
     } catch (DataIntegrityViolationException e) {
       model.addAttribute("message", "登録に失敗しました。");

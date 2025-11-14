@@ -2,34 +2,40 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
   <title>冒険スタート</title>
+  <link rel="stylesheet" th:href="@{/css/styles.css}">
 </head>
 <body>
-<p th:if="${isGuest}"
-   style="position: absolute; top: 8px; right: 12px; font-size: 0.9em; color: #ccc;">
-  （ゲストプレイ中）
-</p>
-<p th:text="${scene.message}">ここにストーリーテキスト</p>
 
-<!-- choices があるときだけフォームを表示 -->
-<div th:if="${#lists.size(scene.choices) > 0}">
-  <form th:action="${isGuest} ? @{/guest/choice} : @{/choice}" method="post">
-    <input type="hidden" name="currentScene" th:value="${scene.id}"/>
-    <!-- ★前のシーン ID も送信 -->
-    <input type="hidden" name="previousScene" th:value="${scene.previousSceneId}"/>
+<!-- ゲストプレイ表示 -->
+<p th:if="${isGuest}" class="guest-label">（ゲストプレイ中）</p>
 
-    <div th:each="c : ${scene.choices}">
-      <input type="radio" name="selected" th:value="${c}" th:id="${c}" required/>
-      <label th:for="${c}" th:text="${c}">選択肢</label><br/>
-    </div>
+<div class="container">
 
-    <button type="submit">決定</button>
-  </form>
+  <!-- ストーリー本文 -->
+  <p class="story-text" th:text="${scene.message}">ここにストーリーテキスト</p>
+
+  <!-- 選択肢がある場合のみ -->
+  <div th:if="${#lists.size(scene.choices) > 0}">
+
+    <form th:action="${isGuest} ? @{/guest/choice} : @{/choice}" method="post">
+      <input type="hidden" name="currentScene" th:value="${scene.id}" />
+      <input type="hidden" name="previousScene" th:value="${scene.previousSceneId}" />
+
+      <div class="choice-list" th:each="c : ${scene.choices}">
+        <button class="choice-btn" type="submit" name="selected" th:value="${c}"
+                th:text="${c}">選択肢</button>
+      </div>
+
+    </form>
+  </div>
+
+  <!-- 選択肢が空（＝ゲーム終了） -->
+  <div th:if="${#lists.isEmpty(scene.choices)}" class="end-section">
+    <p>ゲーム終了です。お疲れさまでした！</p>
+    <a th:href="@{/home}" class="btn">ホームに戻る</a>
+  </div>
+
 </div>
 
-<!-- choices が空（＝ゲーム終了）ならホームリンク -->
-<div th:if="${#lists.isEmpty(scene.choices)}">
-  <p>ゲーム終了です。お疲れさまでした！</p>
-  <a th:href="@{/home}">ホームに戻る</a>
-</div>
 </body>
 </html>

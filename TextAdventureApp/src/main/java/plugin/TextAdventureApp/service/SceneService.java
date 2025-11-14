@@ -2,7 +2,6 @@ package plugin.TextAdventureApp.service;
 
 import jakarta.annotation.PostConstruct;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -81,22 +80,19 @@ public class SceneService{
 
   /**
    * 指定されたシーンIDに対応する"SceneData"を取得する
+   * 確率イベントを実装
    * @param id　取得したいシーンのID
    * @return　対応する"SceneData"オブジェクト
    */
   public SceneData getScene(String id) {
-    //SceneData scene = scenes.getOrDefault(id, scenes.get("end"));
     SceneData original = scenes.getOrDefault(id, scenes.get("end"));
     if (original == null) return scenes.get("end");
 
-    // 元データをコピーして返す
     SceneData scene = original.clone();
 
-    // deepCaveEventの場合、確率イベントを発動
     if ("deepCaveEvent".equals(id)) {
-      int chance = new SplittableRandom().nextInt(100); // 0〜99
-      if (chance < 30) { // 30%の確率で成功
-      //if (chance < 1) { // 30%の確率で成功 debug
+      int chance = new SplittableRandom().nextInt(100);
+      if (chance < 30) {
         scene.setMessage("宝箱を見つけた！中にはキラキラした宝石が入っていた！");
         scene.reward("宝石");
       } else {
@@ -108,6 +104,7 @@ public class SceneService{
 
   /**
    * 選択肢に対応した次のシーン場面を返すメソッド
+   * 必要アイテムの所持チェックも行う
    * @param currentId　現在のシーンID
    * @param choice　プレイヤーの選んだ選択肢
    * @param previousId　ひとつ前のシーンID
@@ -120,23 +117,19 @@ public class SceneService{
 
     String nextId = current.getNextSceneMap().getOrDefault(choice, "end");
     SceneData next = getScene(nextId);
-    next.setPreviousSceneId(currentId); // 前のシーンを記録
+    next.setPreviousSceneId(currentId);
 
-    // 必要アイテムチェック
     if (next.getRequiredItem() != null &&
         !playerItems.contains(next.getRequiredItem())) {
 
-      // 条件を満たさないなら、警告シーンへ
       SceneData blocked = new SceneData("blocked", "何かが足りないようだ…（進めない）");
       blocked.setChoices(List.of("戻る"));
-      // 前のシーン ID を戻り先として設定
+
       blocked.setNextSceneMap(Map.of("戻る", "backcave"));
       scenes.put("blocked", blocked);
       return blocked;
     }
 
-
-    // アイテム報酬があれば追加
     if (next.getItemReward() != null) {
       playerItems.add(next.getItemReward());
     }

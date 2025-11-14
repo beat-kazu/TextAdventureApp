@@ -1,14 +1,12 @@
-package plugin.TextAdventureApp.contoller;
+package plugin.TextAdventureApp.controller;
 
 import jakarta.servlet.http.HttpSession;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import plugin.TextAdventureApp.data.SceneData;
 import plugin.TextAdventureApp.service.SceneService;
@@ -45,8 +43,6 @@ public class AdvController {
    */
   @GetMapping({"/", "/home"})
   public String home(HttpSession session) {
-    // プレイヤーのアイテムをリセット
-    //resetGameSession(session);
     session.removeAttribute("playerItems");
     session.setAttribute("playerItems", new HashSet<String>());
     return "home";
@@ -60,12 +56,11 @@ public class AdvController {
    */
   @GetMapping("/start")
   public String start(Model model, HttpSession session) {
-    //resetGameSession(session);
     SceneData scene = sceneService.getScene("start");
 
     // debug
     Set<String> items = (Set<String>) session.getAttribute("playerItems");
-    System.out.println("現在のアイテム: " + items); // デバッグ表示
+    System.out.println("現在のアイテム: " + items);
 
 
     model.addAttribute("scene", scene);
@@ -96,39 +91,33 @@ public class AdvController {
     }
     SceneData next = sceneService.getNextScene(currentScene, selected, previousScene, playerItems);
 
-    // GameOverを選んだ時だけhomeに戻す
-    if ("GameOver".equals(selected)) {
+        if ("GameOver".equals(selected)) {
       session.removeAttribute("playerItems");
       return "redirect:/home";
     }
-    // nextSceneMap に home があればリダイレクト
-    //if (next.getNextSceneMap() != null && next.getNextSceneMap().containsValue("home")) {
-    //  sceneService.resetPlayerItems();
-    //  return "redirect:/home";
-    // }
-
 
     model.addAttribute("scene", next);
     return "game";
   }
 
-  // ================================================
-  // ▼ ゲストモード用の追加部分　ベースは通常時と同じ為docは略
-  // ================================================
-
+  /**
+   * ゲストモード用の追加部分　ベースは通常時と同じ為docは略
+   */
   @GetMapping("/guest/start")
   public String guestStart(Model model, HttpSession session) {
-    // セッション初期化（ゲスト専用）
     session.removeAttribute("playerItems");
     session.setAttribute("playerItems", new HashSet<String>());
     session.setAttribute("guestMode", true);
 
     SceneData scene = sceneService.getScene("start");
     model.addAttribute("scene", scene);
-    model.addAttribute("isGuest", true);  // Thymeleaf 側でゲスト表記など出したいとき用
+    model.addAttribute("isGuest", true);
     return "game";
   }
 
+  /**
+   * ゲストモード用の追加部分　ベースは通常時と同じ為docは略
+   */
   @PostMapping("/guest/choice")
   public String guestChoice(@RequestParam String selected,
       @RequestParam String currentScene,
@@ -161,7 +150,6 @@ public class AdvController {
    * @param session 現在のHTTPセッション
    */
   private void resetGameSession(HttpSession session) {
-    // 既存ログインセッションを維持しつつ、ゲームデータのみ初期化
     session.setAttribute("playerItems", new HashSet<String>());
     session.setAttribute("previousScene", null);
   }

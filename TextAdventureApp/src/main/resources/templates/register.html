@@ -3,16 +3,33 @@
 <head>
   <meta charset="UTF-8">
   <title>ユーザ登録</title>
+  <link rel="stylesheet" th:href="@{/css/styles.css}">
 </head>
 <body>
-<h1>新規ユーザ登録</h1>
 
-<form th:action="@{/register}" method="post" th:object="${player}">
-  ユーザー名：<input type="text" th:field="*{username}" /><br>
-  パスワード：<input type="password" th:field="*{password}" /><br>
-  <button type="submit">登録</button>
-</form>
+<div class="container">
 
-<p th:text="${message}"></p>
+  <h1 class="title">新規ユーザ登録</h1>
+
+  <form th:action="@{/register}" method="post" th:object="${player}">
+
+    <label>ユーザー名</label>
+    <input type="text" class="input-field" th:field="*{username}" />
+
+    <label>パスワード</label>
+    <input type="password" class="input-field" th:field="*{password}" />
+
+    <!-- login.html と同じ青いボタンを使用 -->
+    <button type="submit" class="btn">登録</button>
+  </form>
+
+  <p th:text="${message}" style="color: #ff6f6f; margin-top: 10px;"></p>
+
+  <div class="sub-links">
+    <a href="/login">ログインへ戻る</a>
+  </div>
+
+</div>
+
 </body>
 </html>

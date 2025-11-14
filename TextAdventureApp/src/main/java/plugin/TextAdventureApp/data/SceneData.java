@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Map;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.Data;
 
 /**
  * アドベンチャーゲームにおける一つのシーン(場面)を表すデータセットです。
@@ -12,14 +11,14 @@ import lombok.Data;
 @Setter
 @Getter
 public class SceneData {
-  private String id;             // シーンID (例: "start", "cave", "village")
-  private String message;        // 表示メッセージ
-  private List<String> choices;  // 選択肢
-  private Map<String, String> nextSceneMap; // 選択肢→次のシーンID
+  private String id;
+  private String message;
+  private List<String> choices;
+  private Map<String, String> nextSceneMap;
 
-  private String itemReward;     // このシーンで得られるアイテム
-  private String requiredItem;   // このシーンに入るために必要なアイテム
-  private String previousSceneId; // blocked時の戻り先用
+  private String itemReward;
+  private String requiredItem;
+  private String previousSceneId;
 
   /**
    * シーンIDとメッセージを指定してインスタンスを生成します。

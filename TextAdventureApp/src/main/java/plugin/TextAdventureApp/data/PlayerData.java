@@ -16,8 +16,8 @@ import lombok.Setter;
 /**
  * プレイヤー情報のDBテーブルの構成を定義
  */
-@Entity  // DBテーブルと対応することを示す
-@Table(name = "player_data", uniqueConstraints = @UniqueConstraint(columnNames = "username"))  // 対応テーブル名
+@Entity
+@Table(name = "player_data", uniqueConstraints = @UniqueConstraint(columnNames = "username"))
 public class PlayerData {
 
   @Id
