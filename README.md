@@ -51,10 +51,16 @@ Webアプリゲーム「テキストアドベンチャーゲーム」に関す�
 * ※とても短いゲームですが、デモはゲーム途中までを流しています。
 
 ## 環境
-* 設計言語：Oracle JDK　Java21  
-* 作業環境：Windows 11(24H2)
-* MySql：mysql バージョン	8.0.42
-* Spring Boot：バージョン	3.5.6
+| ツール、環境  | バージョン  |
+| ------------- | ------------- |
+| 設計言語  | Oracle JDK Java21  |
+| 作業環境  | Windows 11(24H2)  |
+| MySql  |  8.0.42  |
+| Spring Boot  | 3.5.6  |
+| WSL  | WSL2  |
+| Docker Desktop  | 4.51.0  |
+| Ubuntu  | 24.04.3 LTS  |
+
 
 ## 機能一覧
 | No. | 機能 |  |
@@ -96,11 +102,21 @@ Webアプリゲーム「テキストアドベンチャーゲーム」に関す�
 * キーアイテムを持ってないと進めないルートが存在します
 
 ## 事前準備
-* データベースの準備として、以下のファイルに記載の password をご自身のパスワードに変更してください
-  + src/main/resources/application.properties
-   ```　 spring.datasource.password=password　```
-* アプリを任意の開発環境で実行してブラウザを起動し、下記に示すアプリホーム画面に接続できるか確認してください。
-   
+* 本Gitデータをご自身の環境にgit cloneしてください。
+* 環境直下に.envファイルを作成し、下記の通りにご自身のMySQLパスワードを記述してください。  
+   ```　 SPRING_DB_PASSWORD="あなたのMySqlパスワード"　```  
+   docker-compose.ymlファイルでパスワードを参照しています。  
+* Docker Desktopを立ち上げ、環境直下で以下を実行してください。
+  + docker compose up --build
+* 任意のブラウザで[URL情報](#url情報)に接続しアプリが起動するか確認してください。  
+&nbsp;  
+* ご自身でコンパイルして、アプリ起動する場合は、DBをご自身で  
+[データベース構成](#データベース構成)の通りCREATEして  
+以下のファイルに記載の あなたのパスワード をご自身のパスワードに変更してください。  
+その後は、任意のブラウザで[URL情報](#url情報)に接続しアプリが起動するか確認してください。
+  + src/main/resources/application-local.properties   
+   ```　 spring.datasource.password=あなたのパスワード　```
+&nbsp;     
 ## URL情報
 * ログイン登録URL:
 * http://localhost:8080/register
