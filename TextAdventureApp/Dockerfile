@@ -9,12 +9,12 @@ COPY gradle ./gradle
 COPY gradlew ./
 
 # 依存関係だけ先にダウンロード（キャッシュされる）
-RUN ./gradlew dependencies --no-daemon || true
+RUN sh ./gradlew dependencies --no-daemon || true
 
 # 全ソースをコピーしてビルド
 COPY . .
 
-RUN ./gradlew build -x test --no-daemon
+RUN sh ./gradlew build -x test --no-daemon
 
 
 # ▼ 2. 実行用
