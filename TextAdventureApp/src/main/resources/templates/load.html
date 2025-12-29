@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>ロード中...</title>
+  <link rel="stylesheet" th:href="@{/css/styles.css}">
+
+  <meta name="_csrf" th:content="${_csrf.token}"/>
+  <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+
+</head>
+<body>
+
+<div class="container">
+  <h1>ロード中</h1>
+  <p class="description">
+    セーブデータを読み込んでいます。
+  </p>
+
+  <div class="loading-box">
+    <p>しばらくお待ちください…</p>
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", async () => {
+    try {
+      const res = await fetch("/api/save", {
+        method: "GET",
+        headers: { "Content-Type": "application/json" }
+      });
+
+      if (!res.ok) {
+        throw new Error("Load API returned error status: " + res.status);
+      }
+
+      const data = await res.json();
+
+      // --- API のレスポンス想定 ---------------------
+      // {
+      //   "currentSceneId": "forest",
+      //   "previousSceneId": "start",
+      //   "items": ["sword", "key"]
+      // }
+      // ---------------------------------------------
+
+      // CSRF トークン取得
+      const tokenMeta  = document.querySelector('meta[name="_csrf"]');
+      const headerMeta = document.querySelector('meta[name="_csrf_header"]');
+      const token  = tokenMeta  ? tokenMeta.content : "";
+      const header = headerMeta ? headerMeta.content : "";
+
+      //  ロードした items をセッションへ反映する
+      const applyRes = await fetch("/api/save/apply", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          [header]: token    // ★ CSRF トークン付加
+        },
+        body: JSON.stringify(data)
+      });
+
+      if (!applyRes.ok) {
+        throw new Error("Failed to apply loaded items to session");
+      }
+
+      // ゲーム画面へ遷移
+      const sceneId = data.currentSceneId;
+      if (!sceneId) {
+        throw new Error("currentSceneId is empty");
+      }
+
+      window.location.href = `/game?sceneId=${encodeURIComponent(sceneId)}`;
+
+    } catch (err) {
+      console.error("Load error:", err);
+      alert("ロードに失敗しました。ホーム画面に戻ります。");
+      window.location.href = "/home";
+    }
+  });
+</script>
+
+</body>
+</html>

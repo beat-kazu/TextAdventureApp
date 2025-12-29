@@ -1,6 +1,7 @@
 package plugin.TextAdventureApp.service;
 
 
+import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -27,14 +28,14 @@ public class CustomUserDetailsService implements UserDetailsService {
    */
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-      PlayerData player = playerRepository.findByUsername(username);
-      if(player == null){
+      Optional<PlayerData> player = playerRepository.findByUsername(username);
+      if(player.isEmpty()){
         throw new UsernameNotFoundException("User not found: " + username);
       }
       return User.builder()
-          .username(player.getUsername())
-          .password(player.getPassword())
-          .roles(player.getRole() !=null ? player.getRole() : "USER")
+          .username(player.get().getUsername())
+          .password(player.get().getPassword())
+          .roles(player.get().getRole() !=null ? player.get().getRole() : "USER")
           .build();
     }
 }

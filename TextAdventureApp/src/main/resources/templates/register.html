@@ -12,12 +12,20 @@
   <h1 class="title">新規ユーザ登録</h1>
 
   <form th:action="@{/register}" method="post" th:object="${player}">
-
+    <p class="description">
+      ニックネームと好きな食べ物は、ゲーム内メッセージに使用されます。
+    </p>
     <label>ユーザー名</label>
     <input type="text" class="input-field" th:field="*{username}" />
 
     <label>パスワード</label>
     <input type="password" class="input-field" th:field="*{password}" />
+
+    <label>ニックネーム</label>
+    <input type="text" class="input-field" th:field="*{nickname}" />
+
+    <label>好きな食べ物</label>
+    <input type="text" class="input-field" th:field="*{favorite}" />
 
     <!-- login.html と同じ青いボタンを使用 -->
     <button type="submit" class="btn">登録</button>

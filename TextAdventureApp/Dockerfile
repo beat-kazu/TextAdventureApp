@@ -25,5 +25,8 @@ WORKDIR /app
 # ビルドで生成した jar をコピー
 COPY --from=builder /app/build/libs/*.jar app.jar
 
+# このコンテナが使用するポート
+EXPOSE 8080
+
 # 実行
 ENTRYPOINT ["java", "-jar", "app.jar"]

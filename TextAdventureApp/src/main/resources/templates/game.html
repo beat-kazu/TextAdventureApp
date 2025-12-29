@@ -3,39 +3,312 @@
 <head>
   <title>冒険スタート</title>
   <link rel="stylesheet" th:href="@{/css/styles.css}">
-</head>
-<body>
 
-<!-- ゲストプレイ表示 -->
-<p th:if="${isGuest}" class="guest-label">（ゲストプレイ中）</p>
+  <!-- ▼ CSRF トークン（Spring Security 用） -->
+  <meta name="_csrf" th:content="${_csrf.token}">
+  <meta name="_csrf_header" th:content="${_csrf.headerName}">
+</head>
+
+<body>
+<div id="loading" class="loading hidden">
+  <div class="spinner"></div>
+</div>
+<div id="toast" class="toast hidden"></div>
+
+<!-- ▼ゲスト表示 -->
+<div th:if="${isGuest}" class="guest-label">
+  （ゲストプレイ中）
+</div>
 
 <div class="container">
 
-  <!-- ストーリー本文 -->
-  <p class="story-text" th:text="${scene.message}">ここにストーリーテキスト</p>
+  <!-- ===== ストーリー ===== -->
+  <section class="story-box">
+    <p class="story-text"
+       th:text="${scene != null && scene.message != null ? scene.message : ''}">
+    </p>
 
-  <!-- 選択肢がある場合のみ -->
-  <div th:if="${#lists.size(scene.choices) > 0}">
+  </section>
 
-    <form th:action="${isGuest} ? @{/guest/choice} : @{/choice}" method="post">
-      <input type="hidden" name="currentScene" th:value="${scene.id}" />
-      <input type="hidden" name="previousScene" th:value="${scene.previousSceneId}" />
+  <!-- ===== 選択肢 ===== -->
+  <section class="choice-box"
+           th:if="${scene != null and not #lists.isEmpty(scene.choices)}">
+
+    <form id="choiceForm"
+          th:action="${isGuest} ? @{/guest/choice} : @{/choice}"
+          method="post">
+
+      <input id="currentScene"  type="hidden" name="currentScene"  th:value="${scene.id}" />
+      <input id="previousScene" type="hidden" name="previousScene" th:value="${scene.previousSceneId}" />
+      <input id="itemsJson" name="itemsJson" type="hidden" value="" />
 
       <div class="choice-list" th:each="c : ${scene.choices}">
-        <button class="choice-btn" type="submit" name="selected" th:value="${c}"
-                th:text="${c}">選択肢</button>
+        <button class="choice-btn"
+                type="submit"
+                name="selected"
+                th:value="${c}"
+                onclick="clickedValue=this.value">
+          <span th:text="${c}"></span>
+        </button>
       </div>
-
     </form>
-  </div>
+  </section>
 
-  <!-- 選択肢が空（＝ゲーム終了） -->
-  <div th:if="${#lists.isEmpty(scene.choices)}" class="end-section">
-    <p>ゲーム終了です。お疲れさまでした！</p>
-    <a th:href="@{/home}" class="btn">ホームに戻る</a>
-  </div>
+  <!-- ===== END 表示 ===== -->
+  <section class="end-box"
+           th:if="${scene != null and #lists.isEmpty(scene.choices)}">
+
+    <p class="end-message">
+      物語は、ここで一区切りです。
+    </p>
+
+    <a th:href="@{/home}" class="btn">
+      Game Over
+    </a>
+
+  </section>
+
+  <!-- ===== システム操作（最下部固定） ===== -->
+  <hr class="divider">
+
+  <section class="system-box">
+
+    <button id="manualSaveButton" class="btn system-btn">
+      セーブする
+    </button>
+
+    <div id="deleteSaveArea">
+      <div th:if="${hasSave}">
+        <button id="deleteSaveButton" class="btn btn-danger">
+          セーブ削除
+        </button>
+      </div>
+      <div th:if="${!hasSave}">
+        <button class="btn btn-danger"disabled style="opacity:0.5; cursor:not-allowed;">
+          セーブ削除（データなし）
+        </button>
+      </div>
+    </div>
+
+    <a th:href="@{/home}" class="sub-links return-home">
+      ホームに戻る
+    </a>
+
+    <script th:inline="javascript">
+      const isGuest = /*[[${isGuest}]]*/ false;
+    </script>
+
+  </section>
 
 </div>
 
 </body>
 </html>
+
+
+<!-- ▼ 初期データ埋込（Thymeleaf） -->
+<script th:inline="javascript">
+  let clickedValue = null;
+
+  // 現在セッションにあるアイテム
+  const items = /*[[${items}]]*/ [];
+  console.log("Loaded items from server (session):", items);
+
+  // このシーンの itemReward
+  const reward = /*[[${scene != null ? scene.itemReward : null}]]*/ null;
+  console.log("Scene itemReward:", reward);
+
+  // シーン ID
+  console.log("Rendered Scene ID:",
+  /*[[${scene != null ? scene.id : ''}]]*/ "");
+</script>
+
+
+<script>
+    // ▼ ロードされたデータ（Thymeleaf）
+    const loadedItems = /*[[${loadedItems}]]*/ null;
+    const loadedSceneId = /*[[${loadedSceneId}]]*/ null;
+
+    // ▼ ロード結果があれば items を置換
+    if (loadedItems !== null) {
+      console.log(">>> overwrite items by loaded:", loadedItems);
+      items.length = 0;
+      items.push(...loadedItems);
+    }
+
+    // ▼ ロード後のシーンIDが埋め込まれている場合 → hidden に反映
+    if (loadedSceneId !== null) {
+      const cs = document.getElementById("currentScene");
+      if (cs) cs.value = loadedSceneId;
+    }
+
+  document.addEventListener("DOMContentLoaded", () => {
+
+    const form = document.getElementById("choiceForm");
+
+    // ---------------------------------------
+    // ▼ アイテム取得ロジック
+    // ---------------------------------------
+    //if (reward !== null && reward !== "" && !items.includes(reward)) {
+    //  console.log(">>> reward item added:", reward);
+    //  items.push(reward);
+    //  console.log("Updated items:", items);
+    //}
+
+    // ---------------------------------------
+    // ▼ 選択肢クリック時
+    // ---------------------------------------
+    form?.addEventListener("submit", () => {
+      showLoading();
+
+    // ★ 送信を邪魔しないよう、次のフレームで無効化
+    requestAnimationFrame(() => {
+      document
+        .querySelectorAll(".choice-btn")
+        .forEach(btn => btn.disabled = true);
+    });
+
+
+      console.log("Choice submitted:", clickedValue);
+
+        // ★ 追加：hidden itemsJson に current items を入れる
+       const itemsField = document.getElementById("itemsJson");
+       if (itemsField) {
+         itemsField.value = JSON.stringify(items);
+         console.log(">>> itemsJson set for submit:", itemsField.value);
+       }
+      });
+
+    // ---------------------------------------
+    // ▼ 手動セーブ
+    // ---------------------------------------
+    document.getElementById("manualSaveButton")
+      .addEventListener("click", async () => {
+
+        const currentSceneId  = document.getElementById("currentScene").value;
+        //const previousSceneId = document.getElementById("previousScene").value;
+        const previousSceneId = document.getElementById("previousScene").value || "";
+
+        const payload = {
+          currentSceneId: currentSceneId,
+          previousSceneId: previousSceneId,
+          items: items
+        };
+
+        console.log("manual-save payload:", payload);
+
+        // ▼ CSRF トークン取得
+        //const token  = document.querySelector('meta[name="_csrf"]').content;
+        //const header = document.querySelector('meta[name="_csrf_header"]').content;
+        const tokenMeta  = document.querySelector('meta[name="_csrf"]');
+        const headerMeta = document.querySelector('meta[name="_csrf_header"]');
+        const token  = tokenMeta  ? tokenMeta.content : "";
+        const header = headerMeta ? headerMeta.content : "";
+
+        try {
+          const res = await fetch("/api/save", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              [header]: token   // ★ CSRF トークンを送信
+            },
+            body: JSON.stringify(payload)
+          });
+
+          console.log("manual-save response:", res.status);
+
+          if (res.status === 200) {
+            showToast("セーブしました！");
+            setTimeout(() => location.reload(), 500);
+
+          } else {
+            showToast("セーブに失敗しました（" + res.status + "）");
+          }
+
+        } catch (err) {
+          console.error("Manual Save Error:", err);
+          showToast("セーブに失敗しました。");
+        }
+      });
+
+  });
+</script>
+
+<!-- セーブ削除 -->
+<script>
+  async function deleteSaveHandler() {
+    if (!confirm("セーブデータを削除しますか？")) {
+      return;
+    }
+
+    const tokenMeta  = document.querySelector('meta[name="_csrf"]');
+    const headerMeta = document.querySelector('meta[name="_csrf_header"]');
+    const token  = tokenMeta?.content ?? "";
+    const header = headerMeta?.content ?? "";
+
+    try {
+      const res = await fetch("/api/save", {
+        method: "DELETE",
+        headers: {
+          [header]: token
+        }
+      });
+
+      console.log("delete-save response:", res.status);
+
+if (res.status === 200) {
+  showToast("セーブ削除しました！");
+  setTimeout(() => location.reload(), 500);
+} else {
+  showToast("セーブに失敗しました（" + res.status + "）", "error");
+}
+
+
+    } catch (err) {
+      console.error("Delete Save Error:", err);
+      showToast("セーブ削除に失敗しました");
+    }
+  }
+
+  // 初期ロード時に既存ボタンへ登録
+  document.addEventListener("DOMContentLoaded", () => {
+    const deleteBtn = document.getElementById("deleteSaveButton");
+    if (deleteBtn) {
+      deleteBtn.addEventListener("click", deleteSaveHandler);
+    }
+  });
+</script>
+
+<script>
+  function showToast(message, type = "success", duration = 2000) {
+    const toast = document.getElementById("toast");
+    if (!toast) return;
+
+    toast.textContent = message;
+    toast.className = `toast ${type}`;
+    toast.classList.remove("hidden");
+
+    // 表示
+    requestAnimationFrame(() => {
+      toast.classList.add("show");
+    });
+
+    // 自動で消える
+    setTimeout(() => {
+      toast.classList.remove("show");
+      setTimeout(() => {
+        toast.classList.add("hidden");
+      }, 300);
+    }, duration);
+  }
+</script>
+
+<script>
+  function showLoading() {
+    document.getElementById("loading")?.classList.remove("hidden");
+  }
+
+  function hideLoading() {
+    document.getElementById("loading")?.classList.add("hidden");
+  }
+</script>

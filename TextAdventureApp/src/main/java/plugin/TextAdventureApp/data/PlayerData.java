@@ -31,5 +31,13 @@ public class PlayerData {
   private String password;
 
   private String role;
+
+  private String nickname;
+  private String favorite;
+
+  @Column(columnDefinition = "json")
+  private String playerFlags;
+
+
 }
 

@@ -3,15 +3,144 @@
 <head>
   <title>Home</title>
   <link rel="stylesheet" th:href="@{/css/styles.css}">
+
+  <!-- ▼ CSRF トークン（Spring Security 用） -->
+  <meta name="_csrf" th:content="${_csrf.token}">
+  <meta name="_csrf_header" th:content="${_csrf.headerName}">
 </head>
+
 <body>
+<div id="loading" class="loading hidden">
+  <div class="spinner"></div>
+</div>
+<div id="toast" class="toast hidden"></div>
 
 <div class="container">
-  <h1>Welcome!</h1>
+  <h1 class="game-title">Welcome!</h1>
+  <p class="subtitle">― テキストアドベンチャー ―</p>
+  <p th:if="${nickname != null}">
+    ようこそ、<strong>[[${nickname}]]</strong> さん！
+  </p>
 
-  <a href="/start" class="btn">冒険のはじまり！</a>
-  <a href="/guest/start" class="btn">(ゲスト)冒険のはじまり！</a>
+  <p th:if="${favorite != null}">
+    あなたの好きな食べ物は「[[${favorite}]]」ですね。
+  </p>
+
+  <a href="/start" class="btn nav-link"  >冒険のはじまり！</a>
+  <a href="/guest/start" class="btn nav-link"  >(ゲスト)冒険のはじまり！</a>
+  <!-- ▼ ログイン済かどうかをチェック -->
+  <div th:if="${isLoggedIn}">
+    <div th:if="${hasSave}">
+      <a href="/load" class="btn nav-link" >続きから再開</a>
+    </div>
+
+    <div th:if="${!hasSave}">
+      <button class="btn nav-link" disabled style="opacity:0.5; cursor:not-allowed;">
+        続きから再開（データなし）
+      </button>
+      <p>ロードできるデータがありません。</p>
+    </div>
+  </div>
+  <!-- ▼ 未ログイン時 -->
+  <div th:if="${!isLoggedIn}">
+    <button class="btn" disabled style="opacity:0.5; cursor:not-allowed;">
+      続きから再開（ログインが必要）
+    </button>
+    <p>ロードするにはログインしてください</p>
+  </div>
+  <div th:if="${hasSave}">
+    <button id="deleteSaveButton" class="btn btn-danger">セーブ削除</button>
+  </div>
+  <div th:if="${!hasSave}">
+    <!--<button class="btn" disabled style="opacity:0.5; cursor:not-allowed;">セーブ削除</button> -->
+    <button class="btn btn-danger" disabled style="opacity:0.5; cursor:not-allowed;">
+      セーブ削除
+    </button>
+  </div>
+
 </div>
+
+<!-- セーブ削除 -->
+<script >
+  document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll(".nav-link").forEach(link => {
+      link.addEventListener("click", () => {
+        showLoading();
+      });
+    });
+
+    const deleteBtn = document.getElementById("deleteSaveButton");
+    if (!deleteBtn) return;
+
+    deleteBtn.addEventListener("click", async () => {
+      if (!confirm("セーブデータを削除しますか？")) {
+        return;
+      }
+
+      const tokenMeta  = document.querySelector('meta[name="_csrf"]');
+      const headerMeta = document.querySelector('meta[name="_csrf_header"]');
+      const token  = tokenMeta  ? tokenMeta.content : "";
+      const header = headerMeta ? headerMeta.content : "";
+
+      try {
+        const res = await fetch("/api/save", {
+          method: "DELETE",
+          headers: {
+            [header]: token
+          }
+        });
+
+        console.log("delete-save response:", res.status);
+
+        if (res.status === 200) {
+          showToast("セーブデータを削除しました");
+          location.reload(); // ← 一旦これでOK 後で修正
+        } else {
+          showToast("削除に失敗しました（" + res.status + "）");
+        }
+
+      } catch (err) {
+        console.error("Delete Save Error:", err);
+        showToast("削除に失敗しました");
+      }
+    });
+  });
+</script>
+
+
+<script>
+  function showToast(message, type = "success", duration = 2000) {
+    const toast = document.getElementById("toast");
+    if (!toast) return;
+
+    toast.textContent = message;
+    toast.className = `toast ${type}`;
+    toast.classList.remove("hidden");
+
+    requestAnimationFrame(() => {
+      toast.classList.add("show");
+    });
+
+    setTimeout(() => {
+      toast.classList.remove("show");
+      setTimeout(() => {
+        toast.classList.add("hidden");
+      }, 300);
+    }, duration);
+  }
+</script>
+
+<script>
+  function showLoading() {
+    document.getElementById("loading")?.classList.remove("hidden");
+  }
+
+  function hideLoading() {
+    document.getElementById("loading")?.classList.add("hidden");
+  }
+</script>
 
 </body>
 </html>
+
+
