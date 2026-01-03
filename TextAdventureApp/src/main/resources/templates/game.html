@@ -112,15 +112,10 @@
 
   // 現在セッションにあるアイテム
   const items = /*[[${items}]]*/ [];
-  console.log("Loaded items from server (session):", items);
 
   // このシーンの itemReward
   const reward = /*[[${scene != null ? scene.itemReward : null}]]*/ null;
-  console.log("Scene itemReward:", reward);
 
-  // シーン ID
-  console.log("Rendered Scene ID:",
-  /*[[${scene != null ? scene.id : ''}]]*/ "");
 </script>
 
 
@@ -131,7 +126,6 @@
 
     // ▼ ロード結果があれば items を置換
     if (loadedItems !== null) {
-      console.log(">>> overwrite items by loaded:", loadedItems);
       items.length = 0;
       items.push(...loadedItems);
     }
@@ -146,14 +140,6 @@
 
     const form = document.getElementById("choiceForm");
 
-    // ---------------------------------------
-    // ▼ アイテム取得ロジック
-    // ---------------------------------------
-    //if (reward !== null && reward !== "" && !items.includes(reward)) {
-    //  console.log(">>> reward item added:", reward);
-    //  items.push(reward);
-    //  console.log("Updated items:", items);
-    //}
 
     // ---------------------------------------
     // ▼ 選択肢クリック時
@@ -168,14 +154,10 @@
         .forEach(btn => btn.disabled = true);
     });
 
-
-      console.log("Choice submitted:", clickedValue);
-
-        // ★ 追加：hidden itemsJson に current items を入れる
+        // hidden itemsJson に current items を入れる
        const itemsField = document.getElementById("itemsJson");
        if (itemsField) {
          itemsField.value = JSON.stringify(items);
-         console.log(">>> itemsJson set for submit:", itemsField.value);
        }
       });
 
@@ -186,7 +168,6 @@
       .addEventListener("click", async () => {
 
         const currentSceneId  = document.getElementById("currentScene").value;
-        //const previousSceneId = document.getElementById("previousScene").value;
         const previousSceneId = document.getElementById("previousScene").value || "";
 
         const payload = {
@@ -195,11 +176,7 @@
           items: items
         };
 
-        console.log("manual-save payload:", payload);
-
         // ▼ CSRF トークン取得
-        //const token  = document.querySelector('meta[name="_csrf"]').content;
-        //const header = document.querySelector('meta[name="_csrf_header"]').content;
         const tokenMeta  = document.querySelector('meta[name="_csrf"]');
         const headerMeta = document.querySelector('meta[name="_csrf_header"]');
         const token  = tokenMeta  ? tokenMeta.content : "";
@@ -210,12 +187,10 @@
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              [header]: token   // ★ CSRF トークンを送信
+              [header]: token   // CSRF トークンを送信
             },
             body: JSON.stringify(payload)
           });
-
-          console.log("manual-save response:", res.status);
 
           if (res.status === 200) {
             showToast("セーブしました！");
@@ -253,8 +228,6 @@
           [header]: token
         }
       });
-
-      console.log("delete-save response:", res.status);
 
 if (res.status === 200) {
   showToast("セーブ削除しました！");

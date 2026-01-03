@@ -1,4 +1,4 @@
-package plugin.TextAdventureApp.controller;
+package plugin.textadventureapp.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -6,9 +6,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
-import plugin.TextAdventureApp.data.PlayerData;
+import plugin.textadventureapp.data.PlayerData;
 import org.springframework.ui.Model;
-import plugin.TextAdventureApp.service.PlayerService;
+import plugin.textadventureapp.service.PlayerService;
 
 /**
  * ブラウザとのプレーヤー登録リクエスト(POST/GET)を処理するクラス
@@ -22,7 +22,7 @@ public class PlayerController {
   /**
    * プレイヤー登録フォームをブラウザに表示する処理をするメソッド
    * @param model　画面(ブラウザ)にデータを渡すためのオブジェクト
-   * @return　register.htmlという画面を表示
+   * @return　プレイヤー登録画面（register.html）
    */
   @GetMapping("/register")
   public String showForm(Model model) {
@@ -34,7 +34,7 @@ public class PlayerController {
    *　入力されたプレイヤー情報を登録処理を行うメソッド
    * @param player　プレイヤー情報
    * @param model　画面(ブラウザ)にデータを渡すためのオブジェクト
-   * @return　login.html/register.html(エラーメッセージ)という画面を表示
+   * @return　登録成功時はログイン画面(login.html)、失敗時は登録画面(register.html(エラーメッセージ))
    */
   @PostMapping("/register")
   public String register(@ModelAttribute("player") PlayerData player, Model model) {

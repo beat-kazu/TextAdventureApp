@@ -1,4 +1,4 @@
-package plugin.TextAdventureApp.config;
+package plugin.textadventureapp.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -8,13 +8,12 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
-@Configuration
-@EnableWebSecurity
-
 /**
  * Spring Securityフレームワークを活用して、ログイン認証を行うclassです。
  * アプリ全体のセキュリティ設定を行います。
  */
+@Configuration
+@EnableWebSecurity
 public class SecurityConfig {
 
   /**
@@ -32,7 +31,6 @@ public class SecurityConfig {
           )
           .formLogin(form -> form
               .loginPage("/login")
-              //.defaultSuccessUrl("/start", true)
               .defaultSuccessUrl("/home", true)
               .permitAll()
           )

@@ -1,7 +1,10 @@
-package plugin.TextAdventureApp.service;
+package plugin.textadventureapp.service;
 
 import org.springframework.stereotype.Service;
 
+/**
+ * ユーザーの好物をカテゴリ分けするサービス
+ */
 @Service
   public class FoodCategoryService {
 
@@ -12,6 +15,11 @@ import org.springframework.stereotype.Service;
     OTHER
   }
 
+  /**
+   * ユーザーの好物をカテゴリ分けするメソッド
+   * @param favorite　プレーヤーの好物
+   * @return　カテゴライズされた好物情報
+   */
     public FoodCategory categorize(String favorite) {
       if (favorite == null) return FoodCategory.OTHER;
 

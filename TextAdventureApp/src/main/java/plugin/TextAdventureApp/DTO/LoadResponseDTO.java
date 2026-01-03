@@ -1,4 +1,4 @@
-package plugin.TextAdventureApp.DTO;
+package plugin.textadventureapp.DTO;
 
 import java.util.List;
 import java.util.Map;
@@ -6,6 +6,10 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+
+/**
+ * セーブデータのロード結果をクライアントへ返却するための DTO。
+ */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor

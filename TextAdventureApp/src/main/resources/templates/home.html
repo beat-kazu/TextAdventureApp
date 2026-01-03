@@ -52,7 +52,6 @@
     <button id="deleteSaveButton" class="btn btn-danger">セーブ削除</button>
   </div>
   <div th:if="${!hasSave}">
-    <!--<button class="btn" disabled style="opacity:0.5; cursor:not-allowed;">セーブ削除</button> -->
     <button class="btn btn-danger" disabled style="opacity:0.5; cursor:not-allowed;">
       セーブ削除
     </button>
@@ -89,8 +88,6 @@
             [header]: token
           }
         });
-
-        console.log("delete-save response:", res.status);
 
         if (res.status === 200) {
           showToast("セーブデータを削除しました");

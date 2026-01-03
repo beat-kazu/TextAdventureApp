@@ -1,4 +1,4 @@
-package plugin.TextAdventureApp;
+package plugin.textadventureapp;
 
 import static org.aspectj.bridge.MessageUtil.fail;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -19,10 +19,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import plugin.TextAdventureApp.data.PlayerData;
-import plugin.TextAdventureApp.repository.PlayerRepository;
-import plugin.TextAdventureApp.service.PlayerService;
-import plugin.TextAdventureApp.service.SaveDataService;
+import plugin.textadventureapp.data.PlayerData;
+import plugin.textadventureapp.repository.PlayerRepository;
+import plugin.textadventureapp.service.PlayerService;
 
 @ExtendWith(MockitoExtension.class)
 class PlayerServiceTest {

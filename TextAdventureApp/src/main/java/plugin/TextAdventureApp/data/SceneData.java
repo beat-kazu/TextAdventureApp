@@ -1,4 +1,4 @@
-package plugin.TextAdventureApp.data;
+package plugin.textadventureapp.data;
 
 import java.util.List;
 import java.util.Map;

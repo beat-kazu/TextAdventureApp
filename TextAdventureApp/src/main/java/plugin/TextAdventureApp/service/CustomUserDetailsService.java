@@ -1,4 +1,4 @@
-package plugin.TextAdventureApp.service;
+package plugin.textadventureapp.service;
 
 
 import java.util.Optional;
@@ -8,8 +8,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-import plugin.TextAdventureApp.data.PlayerData;
-import plugin.TextAdventureApp.repository.PlayerRepository;
+import plugin.textadventureapp.data.PlayerData;
+import plugin.textadventureapp.repository.PlayerRepository;
 
 /**
  * Spring Securityでユーザ情報を取得する為のクラス

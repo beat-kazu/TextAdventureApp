@@ -1,13 +1,13 @@
-package plugin.TextAdventureApp;
+package plugin.textadventureapp;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
-import plugin.TextAdventureApp.data.SceneData;
-import plugin.TextAdventureApp.service.FoodCategoryService;
-import plugin.TextAdventureApp.service.SceneService;
+import plugin.textadventureapp.data.SceneData;
+import plugin.textadventureapp.service.FoodCategoryService;
+import plugin.textadventureapp.service.SceneService;
 
 class SceneServiceTest {
 

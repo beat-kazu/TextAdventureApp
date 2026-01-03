@@ -1,4 +1,4 @@
-package plugin.TextAdventureApp;
+package plugin.textadventureapp;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.verify;
@@ -10,10 +10,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import plugin.TextAdventureApp.data.SaveData;
-import plugin.TextAdventureApp.repository.PlayerRepository;
-import plugin.TextAdventureApp.repository.SaveDataRepository;
-import plugin.TextAdventureApp.service.SaveDataService;
+import plugin.textadventureapp.data.SaveData;
+import plugin.textadventureapp.repository.PlayerRepository;
+import plugin.textadventureapp.repository.SaveDataRepository;
+import plugin.textadventureapp.service.SaveDataService;
 
 @ExtendWith(MockitoExtension.class)
 class SaveDataServiceTest {

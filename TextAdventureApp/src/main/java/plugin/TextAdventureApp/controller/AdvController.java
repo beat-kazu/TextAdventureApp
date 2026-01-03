@@ -1,33 +1,22 @@
-package plugin.TextAdventureApp.controller;
+package plugin.textadventureapp.controller;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpSession;
 import java.security.Principal;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
-import plugin.TextAdventureApp.data.PlayerData;
-import plugin.TextAdventureApp.data.SaveData;
-import plugin.TextAdventureApp.data.SceneData;
-import plugin.TextAdventureApp.service.FavoriteService;
-import plugin.TextAdventureApp.service.FoodCategoryService;
-import plugin.TextAdventureApp.service.FoodCategoryService.FoodCategory;
-import plugin.TextAdventureApp.service.PlayerService;
-import plugin.TextAdventureApp.service.SaveDataService;
-import plugin.TextAdventureApp.service.SceneService;
+import plugin.textadventureapp.data.PlayerData;
+import plugin.textadventureapp.data.SceneData;
+import plugin.textadventureapp.service.FavoriteService;
+import plugin.textadventureapp.service.FoodCategoryService;
+import plugin.textadventureapp.service.PlayerService;
+import plugin.textadventureapp.service.SaveDataService;
+import plugin.textadventureapp.service.SceneService;
 
 /**
  * テキストアドベンチャーゲームの画面遷移、プレイ進行を制御するクラス
@@ -41,9 +30,14 @@ public class AdvController {
   private final FoodCategoryService foodCategoryService;
   private final FavoriteService favoriteService;
 
+
   /**
-   * AdvControllerのコンストラクタ。sceneServiceのインスタンスを受け取っています。
-   * @param sceneService　sceneService
+   * AdvControllerのコンストラクタ。ゲーム進行・プレイヤー情報・セーブデータ管理に関する各 Service のインスタンスを受け取ります。
+   * @param sceneService シーン遷移およびシーン情報取得を担当する Service
+   * @param playerService プレイヤー情報およびイベントフラグ管理を担当する Service
+   * @param saveService セーブデータの永続化を担当する Service
+   * @param foodCategoryService 食べ物カテゴリ情報を扱う Service
+   * @param favoriteService プレイヤーの好きな食べ物情報取得を担当する Service
    */
   public AdvController(SceneService sceneService,
                        PlayerService playerService,
@@ -66,15 +60,18 @@ public class AdvController {
     return "login";
   }
 
+
   /**
-   * ホーム画面を表示し、プレイヤーのアイテムデータを初期化します。
-   * @param session HTTPセッション
-   * @return ホーム画面(home.html）を返します。
+   * ホーム画面を表示し、ゲーム開始前のセッション状態を初期化します。
+   * @param session HTTPセッション(ゲーム進行中の一時状態を保持）
+   * @param auth Spring Security による認証情報
+   * @param model 画面表示用データを格納する Model
+   * @param principal ログイン中ユーザーの識別情報
+   * @return  ホーム画面(home.html）を返します。
    */
   @GetMapping({"/", "/home"})
   public String home(HttpSession session, Authentication auth, Model model, Principal principal) {
     // セッション初期化処理
-    //session.invalidate();
     session.removeAttribute("playerItems");
     session.setAttribute("playerItems", new HashSet<String>());
     session.removeAttribute("guestMode");
@@ -86,16 +83,13 @@ public class AdvController {
     // 初期値を入れる
     boolean hasSave = false;
 
-    // ▼ ログイン済み → セーブデータ存在チェック
+    // ログイン済み → セーブデータ存在チェック
     if (isLoggedIn) {
       String username = auth.getName();
       hasSave = saveService.findByUsername(username).isPresent();
     }
       model.addAttribute("hasSave", hasSave);
-      // 初期デバッグ↓
-      //PlayerData player = playerService.findByUsername(principal.getName());
-      //model.addAttribute("nickname", player.getNickname());
-      //model.addAttribute("favorite", player.getFavorite());
+
 
     return "home";
   }
@@ -114,16 +108,18 @@ public class AdvController {
     // アイテム初期化
     session.setAttribute("playerItems", new HashSet<String>());
 
-    // ★ 表示は /game に任せる
+    // 表示は /game に任せる
     return "redirect:/game?sceneId=start";
   }
 
   /**
    * プレイヤーの選択肢を処理し、次のシーンへ遷移します。
-   * @param selected 現在の選択肢
+   * @param selected プレイヤーが選択した選択肢
    * @param currentScene 現在のシーンID
    * @param previousScene 直前のシーンID
+   * @param itemsJson フロント側から渡されるアイテム情報（現在は未使用）
    * @param model ブラウザにデータを渡すためのオブジェクト
+   * @param principal ログイン中ユーザーの識別情報
    * @param session プレイヤーのアイテムなどを保持するセッション
    * @return 次のシーン画面、またはGameOver時のホーム画面へのリダイレクト
    */
@@ -135,11 +131,6 @@ public class AdvController {
                        Model model,
                        Principal principal,
                        HttpSession session) {
-
-    System.out.println("=== /choice ===");
-    System.out.println("sessionId=" + session.getId());
-    System.out.println("itemsJson=" + itemsJson);
-    System.out.println("before items=" + session.getAttribute("playerItems"));
 
     boolean hasSave = false;
     if (principal != null) {
@@ -202,6 +193,14 @@ public class AdvController {
     return "redirect:/game?sceneId=" + next.getId();
   }
 
+  /**
+   * 現在のゲーム状態をもとに、表示すべきシーンを決定し描画します。
+   * @param sceneId 表示対象のシーンID（未指定時は start）
+   * @param model 画面表示用データを格納する Model
+   * @param session セッション（ゲーム進行中の一時状態を保持）
+   * @param principal ログイン中ユーザーの識別情報
+   * @return ゲーム画面（game.html）
+   */
   @GetMapping("/game")
   public String game(
       @RequestParam(required=false) String sceneId,
@@ -209,13 +208,8 @@ public class AdvController {
       HttpSession session,
       Principal principal) {
 
-    System.out.println("==== /game called ====");
-    System.out.println("sessionId=" + session.getId());
-    System.out.println("session.playerItems=" + session.getAttribute("playerItems"));
-
     // ゲスト判定
     boolean isGuest = (principal == null) || Boolean.TRUE.equals(session.getAttribute("guestMode"));
-
 
     model.addAttribute("isGuest", isGuest);
 
@@ -231,9 +225,6 @@ public class AdvController {
     if (sceneId == null || sceneId.isEmpty()) {
       sceneId = "start";
     }
-
-    // --- sceneId がある → ロードしてゲーム再開 ---
-    //SceneData scene = sceneService.getScene(sceneId,items);
 
     boolean foodEventUsed = false;
     if (principal != null && !isGuest) {
@@ -295,7 +286,6 @@ public class AdvController {
 
     sceneService.resolveMessage(scene, favorite, playerName);
 
-    System.out.println("END MESSAGE = " + scene.getMessage());
     model.addAttribute("scene", scene);
 
     // 取得メッセージを表示したら pending に積む
@@ -319,7 +309,8 @@ public class AdvController {
   }
 
   /**
-   * ゲストモード用の追加部分　ベースは通常時と同じ為docは略
+   * ゲストモード用のゲーム画面表示。
+   * ゲストプレイ表記を表示、ゲストプレイ状態を引き渡し
    */
   @GetMapping("/guest/start")
   public String guestStart(HttpSession session) {
@@ -329,7 +320,8 @@ public class AdvController {
   }
 
   /**
-   * ゲストモード用の追加部分　ベースは通常時と同じ為docは略
+   * ゲストモード用のゲーム画面表示。
+   * ゲストプレイ状態を引き渡し
    */
   @PostMapping("/guest/choice")
   public String guestChoice(

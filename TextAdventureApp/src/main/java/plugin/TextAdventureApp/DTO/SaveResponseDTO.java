@@ -1,12 +1,12 @@
-package plugin.TextAdventureApp.DTO;
+package plugin.textadventureapp.DTO;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDateTime;
 import java.util.List;
 import lombok.Data;
-import plugin.TextAdventureApp.data.SaveData;
 
+/**
+ * セーブ処理完了後の結果をクライアントへ返却する DTO
+ */
   @Data
   public class SaveResponseDTO {
     private String username;

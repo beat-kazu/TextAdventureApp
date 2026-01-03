@@ -1,4 +1,4 @@
-package plugin.TextAdventureApp.data;
+package plugin.textadventureapp.data;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -12,13 +12,12 @@ import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.UpdateTimestamp;
 
 @Getter
 @Setter
 
 /**
- *
+ * セーブデータのDBテーブルの構成を定義
  */
 @Entity
 @Table(name = "save_data", uniqueConstraints = @UniqueConstraint(columnNames = "username"))
