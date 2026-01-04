@@ -127,11 +127,15 @@ stateDiagram-v2
 
 ## デモ動画
 * ユーザー登録→ゲーム開始
-* https://github.com/user-attachments/assets/2e1c12ba-0cd3-4898-800b-3f590391f894
+* https://github.com/user-attachments/assets/45dab199-a35a-44cf-9aa6-4c5391bba542
+
+ 
 
 * ゲストプレイ→ゲーム開始
-* https://github.com/user-attachments/assets/94a301f2-33d7-4d08-98d0-5c632b2ef258
-* ※とても短いゲームですが、デモはゲーム途中までを流しています。
+* https://github.com/user-attachments/assets/7d6bf956-5ce2-4dd2-a47a-da423531150c
+
+
+
 
 ## 環境
 | ツール、環境  | バージョン  |
@@ -143,12 +147,17 @@ stateDiagram-v2
 | デプロイ環境  | Render  |
 
 ## データベース構成
-* データベース内構造
-* <img width="640" height="480" alt="image" src="https://github.com/user-attachments/assets/1c14ce19-b270-42e6-b97e-66ecb6c4e17b" />
-* 実際の表示例
-<img width="640" height="480" alt="image" src="https://github.com/user-attachments/assets/7b144df7-4522-4d28-8320-300a7a325588" />
+* データベース内構造(プレーヤー情報)
+<img width="640" height="480" alt="image" src="https://github.com/user-attachments/assets/68e41036-a4d6-4634-8591-be046570a047" />
 
+* 実際の表示例(プレーヤー情報)
+<img width="640" height="480" alt="image" src="https://github.com/user-attachments/assets/b5dfa28f-2785-46c0-943f-60c5bdbe33d7" />
 
+* データベース内構造(セーブデータ)
+<img width="640" height="480" alt="image" src="https://github.com/user-attachments/assets/25fcd494-0edb-410f-b806-871b58975624" />
+
+* 実際の表示例(セーブデータ)
+<img width="640" height="480" alt="image" src="https://github.com/user-attachments/assets/9ef5d1e7-ee0e-42ec-a0ff-4c38db0fd506" />
 
 ## ゲームの流れ
 1. ログインまたはゲストとして開始
