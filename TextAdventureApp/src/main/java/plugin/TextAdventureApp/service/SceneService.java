@@ -17,6 +17,8 @@ import plugin.textadventureapp.data.SceneData;
 public class SceneService{
 
 
+  public static final int BOUND = 100;
+  public static final int RATE = 30;
   private final FoodCategoryService foodCategoryService;
 
   @Getter
@@ -264,9 +266,9 @@ public class SceneService{
       return;
     }
 
-    int chance = new SplittableRandom().nextInt(100);
+    int chance = new SplittableRandom().nextInt(BOUND);
 
-    if (chance < 30) {
+    if (chance < RATE) {
       scene.setMessage("宝箱を見つけた！中にはキラキラした宝石が入っていた！");
       scene.reward("宝石");
     } else {
