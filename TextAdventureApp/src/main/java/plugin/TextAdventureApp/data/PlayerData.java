@@ -35,6 +35,10 @@ public class PlayerData {
   private String nickname;
   private String favorite;
 
+  /**
+   * 現在は save_data.flags + session に責務移行済みのため未使用。
+   * playerFlags は将来の恒久フラグ用として保持。
+   */
   @Column(columnDefinition = "json")
   private String playerFlags;
 

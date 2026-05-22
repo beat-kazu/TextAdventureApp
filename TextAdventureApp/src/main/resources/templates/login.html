@@ -16,6 +16,9 @@
   <p th:if="${param.error}" class="error-text">
     ユーザー名またはパスワードが違います。
   </p>
+  <p th:if="${param.logout}" class="success-text">
+    ログアウトしました。
+  </p>
 
   <form th:action="@{/login}" method="post">
 

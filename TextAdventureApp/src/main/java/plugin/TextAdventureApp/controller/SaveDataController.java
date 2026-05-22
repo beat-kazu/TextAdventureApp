@@ -1,8 +1,6 @@
 package plugin.textadventureapp.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+
 import jakarta.servlet.http.HttpSession;
 import java.security.Principal;
 import java.util.ArrayList;
@@ -10,6 +8,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,36 +26,42 @@ import plugin.textadventureapp.data.SaveData;
 
 import plugin.textadventureapp.service.PlayerService;
 import plugin.textadventureapp.service.SaveDataService;
-
+import lombok.extern.slf4j.Slf4j;
+import plugin.textadventureapp.util.JsonUtils;
 /**
- * ゲーム進行データ（セーブ／ロード／削除）を扱う コントローラー。
+ * ゲーム進行データのセーブ、ロード、削除を管理するREST Controllerです。
+ *
+ * セーブデータとセッション状態の同期処理も行います。
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/save")
 public class SaveDataController {
 
   private final SaveDataService saveDataService;
-  private final ObjectMapper objectMapper;
   private final PlayerService playerService;
+  private final JsonUtils jsonUtils;
 
   /**
-   * SaveDataController のコンストラクタ。
-   * @param saveDataService ゲーム進行データの保存・読込を担当するサービス
-   * @param playerService プレイヤー情報およびイベントフラグ管理を担当するサービス
-   * @param objectMapper JSON ⇔ オブジェクト変換を行うための Jackson ObjectMapper
+   * SaveDataControllerで使用する各Serviceを受け取ります。
+   * @param saveDataService セーブデータの保存・読込を管理するService
+   * @param playerService プレイヤー情報を管理するService
+   * @param jsonUtils　JSON変換処理を行うユーティリティ
    */
   public SaveDataController(
       SaveDataService saveDataService,
       PlayerService playerService,
-      ObjectMapper objectMapper){
+      JsonUtils jsonUtils){
     this.saveDataService = saveDataService;
     this.playerService = playerService;
-    this.objectMapper = objectMapper;
+    this.jsonUtils = jsonUtils;
   }
 
   /**
-   * 現在のゲーム進行状態を保存するメソッド。
-   * @param request　進行状態（シーン・選択情報）
+   * 現在のゲーム進行状態を保存します。
+   *
+   * セッション内のアイテム情報やイベントフラグを取得し、セーブデータとして永続化します。
+   * @param request　保存対象のゲーム進行情報
    * @param principal　認証済みユーザー情報
    * @param session　現在の HTTP セッション
    * @return　保存結果を含むレスポンス
@@ -66,20 +71,26 @@ public class SaveDataController {
   public ResponseEntity<?>  save(@RequestBody  SaveRequestDTO request,
       Principal principal,
       HttpSession session){
+    String username = (principal != null) ? principal.getName() : null;
+
+
+    log.info(">>> SAVE START: user={}", username);
+
+    if (username  == null) {
+      log.warn("SAVE BLOCKED: anonymous user");
+      return ResponseEntity.status(HttpStatus.FORBIDDEN).body("未ログイン時はセーブできません");
+    }
 
     // ゲストプレイ禁止
     Boolean guestMode = (Boolean) session.getAttribute("guestMode");
-    if (guestMode != null && guestMode) {
+    if (Boolean.TRUE.equals(guestMode)) {
+      log.warn("SAVE BLOCKED: guest mode user={}", username);
       return ResponseEntity.status(HttpStatus.FORBIDDEN)
           .body("ゲストプレイ中はセーブできません");
     }
 
-    if (principal == null) {
-      return ResponseEntity.status(HttpStatus.FORBIDDEN).body("未ログイン時はセーブできません");
-    }
-
     // ユーザー名を強制的に設定（クライアント任せにしない）
-    request.setUsername(principal.getName());
+    request.setUsername(username);
 
     // セッションの items を統合する
     @SuppressWarnings("unchecked")
@@ -101,50 +112,49 @@ public class SaveDataController {
     // クライアントの items は信用せず、サーバー状態で上書き
     request.setItems(mergedItems);
 
-    // items(List<String>) → JSON(String)
-    String itemsJson;
-    try{
-      itemsJson = objectMapper.writeValueAsString(request.getItems());
-    }catch(Exception e){
-      return ResponseEntity.badRequest().body("Invalid items format");
-    }
-    Map<String, Boolean> flags = new HashMap<>();
+    String itemsJson = jsonUtils.toJson(request.getItems());
 
- playerService.findByUsername(principal.getName())
-        .map(playerService::getFlags)
-     .ifPresent(dbFlags -> {
-       Object foodEventUsed = dbFlags.get("foodEventUsed");
-       if (foodEventUsed instanceof Boolean b) {
-         flags.put("foodEventUsed", b);
-       }
-     });
+    Map<String, Boolean> flagsMap = new HashMap<>();
 
+    Boolean foodEventUsed =
+        (Boolean) session.getAttribute("foodEventUsed");
 
-    String flagsJson ;
-    try {
-      flagsJson = objectMapper.writeValueAsString(flags);
-    } catch (JsonProcessingException e) {
-      return ResponseEntity.badRequest().body("Invalid flags format");
+    if (Boolean.TRUE.equals(foodEventUsed)) {
+      flagsMap.put("foodEventUsed", true);
     }
 
+    log.info("SAVE FLAGS(session): {}", flagsMap);
+
+    String flagsJson = jsonUtils.toJson(flagsMap);
 
     // サービスで保存
-    SaveData saved = saveDataService.saveProgress(
-        request.getUsername(),
-        request.getCurrentSceneId(),
-        request.getPreviousSceneId(),
-        itemsJson,
-        flagsJson
-    );
+    SaveData saved;
+    try {
+      saved = saveDataService.saveProgress(
+          username,
+          request.getCurrentSceneId(),
+          request.getPreviousSceneId(),
+          request.getItems(),
+          flagsMap
+      );
+    } catch (Exception e){
+      log.error(">>> SAVE DB失敗: user={}", username, e);
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+          .body("セーブに失敗しました");
+    }
 
+    log.info(">>> SAVE SUCCESS: user={}, id={}", saved.getPlayer().getUsername(), saved.getId());
     return ResponseEntity.ok(convertToResponseDTO(saved));
   }
 
   /**
-   * ロードしたゲーム進行データをセッションへ反映する。
-   * @param data ロード済み進行データ
-   * @param session セッション
-   * @return
+   * ロード済みのゲーム進行状態をセッションへ反映します。
+   *
+   * アイテム情報、シーン情報、イベントフラグをセッションへ復元します。
+   *
+   * @param data ロード済みのゲーム進行データ
+   * @param session ゲーム状態を保持するHTTPセッション
+   * @return　セッション反映結果を示すレスポンス
    */
   @PostMapping("/apply")
   public ResponseEntity<?> applyLoadedItemsToSession(
@@ -152,12 +162,13 @@ public class SaveDataController {
       HttpSession session
   ) {
     // セッションの items を置換する
-    session.setAttribute("playerItems", new HashSet<>(data.getItems()));
+    List<String> items = (data.getItems() != null) ? data.getItems() : new ArrayList<>();
+    session.setAttribute("playerItems", new HashSet<>(items));
 
     // シーンもセッションに保持（任意）
     session.setAttribute("loadedSceneId", data.getCurrentSceneId());
 
-    Map<String, Boolean> flags = data.getFlags();
+    Map<String, Boolean> flags = (data.getFlags() != null) ? data.getFlags() : new HashMap<>();
     Boolean foodEventUsed = flags.get("foodEventUsed");
     if (foodEventUsed != null) {
       session.setAttribute("foodEventUsed", foodEventUsed);
@@ -167,9 +178,11 @@ public class SaveDataController {
   }
 
   /**
-   * ログインユーザーのセーブデータを取得する。
+   * ログインユーザーのセーブデータを取得します。
+   *
+   * 保存済みのシーン情報、アイテム情報、イベントフラグを読み込みます。
    * @param principal 認証済みユーザー情報
-   * @return ロード結果を含むレスポンス（存在しない場合はエラー）
+   * @return セーブデータを含むレスポンス
    */
   // ロード API
   // GET /api/save
@@ -182,58 +195,38 @@ public class SaveDataController {
 
     String username = principal.getName();
 
-    SaveData data = saveDataService.loadSaveData(username);
-    if (data == null) {
-      return ResponseEntity.status(HttpStatus.NOT_FOUND).body("セーブデータがありません");
-    }
+    Optional<SaveData> optional = saveDataService.findByUsername(username);
 
-    // flags を Map に復元
-    Map<String, Boolean> loadedFlags;
-    if(data.getFlags() == null || data.getFlags().isBlank()) {
-      loadedFlags = new HashMap<>();
-    }else {
-      try {
-        loadedFlags = objectMapper.readValue(
-            data.getFlags(),
-            new TypeReference<Map<String, Boolean>>() {
-            }
-        );
-      } catch (Exception e) {
-        return ResponseEntity.badRequest().body("Invalid flags data");
-      }
+    if (optional.isEmpty()) {
+      return ResponseEntity.status(HttpStatus.NOT_FOUND)
+          .body("セーブデータがありません");
     }
+    SaveData data = optional.get();
 
-    // PlayerService に渡す
-    playerService.replaceFlags(principal.getName(), loadedFlags);
+    // ===== items =====
+    List<String> items =   jsonUtils.toStringList(data.getItems());
 
-    // JSON → List<String>
-    List<String> items = new ArrayList<>();
-    if (data.getItems() != null && !data.getItems().isEmpty()) {
-      try {
-        items = objectMapper.readValue(data.getItems(), new TypeReference<>() {});
-      } catch (Exception e) {
-        items = new ArrayList<>();
-      }
-    }
+    Map<String, Boolean> flags =
+        jsonUtils.toFlagMap(data.getFlags());
 
     LoadResponseDTO dto = new LoadResponseDTO(
         data.getCurrentSceneId(),
         data.getPreviousSceneId(),
         items,
-        loadedFlags
+        flags
     );
 
     return ResponseEntity.ok(dto);
   }
 
   /**
-   * セーブデータのロード画面（load.html）を表示するための Controller。
+   * セーブデータのロード画面を表示するControllerです。
    */
   @Controller
   public static class LoadPageController {
 
     /**
-     * セーブデータのロード画面を表示する。
+     * ロード画面を表示します。
      * @return ロード画面（load.html）
      */
     @GetMapping("/load")
@@ -242,14 +235,15 @@ public class SaveDataController {
     }
   }
 
-//DTO 変換
+  /**
+   * SaveDataをレスポンス用DTOへ変換します。
+   * JSON形式で保存されたアイテム情報をList形式へ変換して設定します。
+   * @param data セーブデータ
+   * @return レスポンス用DTO
+   */
   private SaveResponseDTO convertToResponseDTO(SaveData data) {
-    List<String> itemsList;
-    try {
-      itemsList = objectMapper.readValue(data.getItems(), new TypeReference<List<String>>() {});
-    } catch (Exception e) {
-      throw  new RuntimeException("Invalid JSON format in DB: items");
-    }
+    List<String> itemsList =
+        jsonUtils.toStringList(data.getItems());
 
     // SaveResponseDTO へ詰め替え
     SaveResponseDTO dto = new SaveResponseDTO();
@@ -262,12 +256,11 @@ public class SaveDataController {
     return dto;
   }
 
-
-
   /**
-   * ログインユーザーのセーブデータを削除する。
+   *  ログインユーザーのセーブデータを削除します。
+   *  ゲストプレイ中は削除できません。
    * @param principal 認証済みユーザー情報
-   * @param session HTTP セッション
+   * @param session 現在のHTTPセッション
    * @return 削除結果を示すレスポンス
    */
   // DELETE API
@@ -287,7 +280,8 @@ public class SaveDataController {
           .body("未ログインです");
     }
 
-    boolean deleted = saveDataService.deleteByUsername(principal.getName());
+    String username = principal.getName();
+    boolean deleted = saveDataService.deleteByUsername(username);
     if (!deleted) {
       return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }

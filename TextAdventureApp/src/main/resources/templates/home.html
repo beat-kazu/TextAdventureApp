@@ -56,7 +56,21 @@
       セーブ削除
     </button>
   </div>
+  <div th:if="${isLoggedIn}">
+    <form th:action="@{/logout}"
+          method="post"
+          onsubmit="return confirm('ログアウトしますか？');">
 
+      <input type="hidden"
+             th:name="${_csrf.parameterName}"
+             th:value="${_csrf.token}" />
+
+      <button type="submit" class="btn btn-danger">
+        ログアウト
+      </button>
+
+    </form>
+  </div>
 </div>
 
 <!-- セーブ削除 -->

@@ -9,10 +9,14 @@ import java.util.SplittableRandom;
 import lombok.Getter;
 import org.springframework.stereotype.Service;
 import plugin.textadventureapp.data.SceneData;
+import lombok.extern.slf4j.Slf4j;
 
 /**
- * ゲームの場面遷移を制御するクラス
+ * テキストアドベンチャーゲームのシーン遷移およびイベント制御を行うServiceです。
+ *
+ * シーン情報管理、条件分岐、イベント判定を担当します。
  */
+@Slf4j
 @Service
 public class SceneService{
 
@@ -26,13 +30,15 @@ public class SceneService{
 
   /**
    * SceneService のコンストラクタ。
-   * @param foodCategoryService プレイヤーの好物をカテゴリ分類するサービス
+   * @param foodCategoryService 好物カテゴリ判定を行うService
    */
   public SceneService(FoodCategoryService foodCategoryService) {
     this.foodCategoryService = foodCategoryService;
   }
   /**
-   * ゲーム開始時に呼び出される初期化メソッド
+   * ゲームシーン情報を初期化します。
+   *
+   * アプリ起動時に実行され、シーン遷移情報やイベント情報を登録します。
    */
   @PostConstruct
   public void init() {
@@ -119,14 +125,17 @@ public class SceneService{
     foodResultOther.setNextSceneMap(Map.of("冒険を続ける","start"));
 
     // 終了
-    //SceneData end = new SceneData("end","あなたの冒険は終わりです。プレイしてくれてありがとう。");
     SceneData end = new SceneData("end","{player}の冒険は終わりです。プレイしてくれてありがとう。");
     end.setChoices(List.of("GameOver"));
     end.setNextSceneMap(Map.of("GameOver","home"));
 
     SceneData ending_food = new SceneData("ending_food","{player}の冒険は終わりです。\r\nあの屋台のおやじも祝福してくれているよ。\r\nプレイしてくれてありがとう。");
-    end.setChoices(List.of("GameOver"));
-    end.setNextSceneMap(Map.of("GameOver","home"));
+    ending_food.setChoices(List.of("GameOver"));
+    ending_food.setNextSceneMap(Map.of("GameOver","home"));
+
+    SceneData blocked = new SceneData("blocked","何かが足りないようだ…（進めない）");
+    blocked.setChoices(List.of("戻る"));
+    blocked.setNextSceneMap(Map.of("戻る","backcave"));
 
 
     scenes.put("start", start);
@@ -147,11 +156,14 @@ public class SceneService{
     scenes.put("foodResultOther", foodResultOther  );
     scenes.put("end", end);
     scenes.put("ending_food", ending_food);
+    scenes.put("blocked", blocked);
 
+    log.info("SceneService initialized. scene count={}", scenes.size());
   }
 
   /**
    *  シーンメッセージのプレースホルダを解決する
+   *   {favorite} や {player} を表示用文字列へ置換します。
    * @param scene 対象のシーン
    * @param favorite プレイヤーの好物
    * @param playerName 表示用のプレイヤー名
@@ -162,6 +174,8 @@ public class SceneService{
 
     String message = scene.getMessage();
     if (message == null) return;
+
+    String originalMessage = message;
 
     if (message.contains("{favorite}")) {
       message = message.replace(
@@ -180,19 +194,20 @@ public class SceneService{
               : "あなた"
       );
     }
+    log.debug("Resolve message: before={}, after={}", originalMessage, message);
 
     scene.setMessage(message);
   }
 
 
   /**
-   * 指定されたシーンIDに対応する"SceneData"を取得する
-   * 確率イベントを実装
+   * 指定シーンIDに対応するシーン情報を取得します。
+   * 条件分岐やイベント判定を考慮した表示用 SceneData を返します。
    * @param id 取得したいシーンのID
    * @param playerItems プレイヤーの所持アイテム
    * @param foodEventUsed 好物イベント実行済みフラグ
    * @param favorite プレイヤーの好物
-   * @return 表示用に加工された SceneData
+   * @return 表示用 SceneData
    */
   public SceneData getScene(
       String id, Set<String> playerItems,boolean foodEventUsed,String favorite) {
@@ -200,17 +215,17 @@ public class SceneService{
   }
 
   /**
-   * 好物イベントを今回のシーン遷移で
-   * 「使用済み」としてマークすべきか判定する。
+   * 好物イベントを使用済みとして
+   * マークすべきシーンか判定します。
    * @param sceneId 現在のシーンID
-   * @return 好物イベントを使用済みにする場合 true
+   * @return 使用済みとする場合 true
    */
   public boolean shouldMarkFoodEventUsed(String sceneId) {
     return sceneId.startsWith("foodResult");
   }
 
   /**
-   * 内部用のシーン取得処理。
+   * シーン取得の内部処理を行います。
    *
    * 特殊イベントや条件分岐を考慮しながら、
    * 実際に表示する SceneData を決定する。
@@ -227,7 +242,10 @@ public class SceneService{
       String favorite
   ) {
     SceneData original = scenes.getOrDefault(id, scenes.get("end"));
-    if (original == null) return scenes.get("end");
+    if (original == null){
+      log.error("Scene not found: id={}", id);
+      return scenes.get("end");
+    }
 
     SceneData scene = original.clone();
 
@@ -238,6 +256,9 @@ public class SceneService{
     if ("foodCheck".equals(id)) {
       FoodCategoryService.FoodCategory category =
           foodCategoryService.categorize(favorite);
+
+      log.info("Food category decision: favorite={}, category={}",
+          favorite, category);
 
       String nextId = switch (category) {
         case MEAT -> "foodResultMeat";
@@ -253,13 +274,15 @@ public class SceneService{
   }
 
   /**
-   * 洞窟奥イベントにおける確率処理を適用する。
+   * deepCaveEvent 用の確率イベント処理を適用します。
+   * 一定確率でアイテム取得イベントを発生させます。
    * @param id 現在のシーンID
    * @param playerItems プレイヤーの所持アイテム
    * @param scene 対象シーン
    */
   private void  applyDeepCaveEvent(String id, Set<String> playerItems, SceneData scene) {
     if (!"deepCaveEvent".equals(id)) return;
+
 
     if (playerItems.contains("宝石")) {
       scene.setMessage("宝箱は空っぽだった。ここで見つかるものはもう無さそうだ。");
@@ -268,20 +291,24 @@ public class SceneService{
 
     int chance = new SplittableRandom().nextInt(BOUND);
 
+    log.info("DeepCave event: chance={}", chance);
+
     if (chance < RATE) {
+      log.info("Item acquired: 宝石");
       scene.setMessage("宝箱を見つけた！中にはキラキラした宝石が入っていた！");
       scene.reward("宝石");
     } else {
+      log.info("No item acquired");
       scene.setMessage("何も見つからなかった…。ただの岩だった。");
     }
   }
 
 
   /**
-   * 選択肢に対応した次のシーン場面を返すメソッド
-   * 必要アイテムの所持チェックも行う
+   * プレイヤー選択に応じて次シーンを決定します。
+   * シーン遷移判定、条件チェック、必須アイテム判定を行います。
    * @param currentId 現在のシーンID
-   * @param choice プレイヤーの選んだ選択肢
+   * @param choice プレイヤーの選択肢
    * @param playerItems プレイヤーの所持アイテム
    * @param foodEventUsed 好物イベント実行済みフラグ
    * @param favorite プレイヤーの好物
@@ -289,19 +316,34 @@ public class SceneService{
    */
   public SceneData getNextScene(String currentId, String choice,Set<String> playerItems, boolean foodEventUsed,String favorite) {
     SceneData current = scenes.get(currentId);
-    if (current == null) return scenes.get("end");
+
+
+    log.info("NextScene decision start: current={}, choice={}, items={}",
+        currentId, choice, playerItems);
+
+    if (current == null)
+    {
+      log.error("Current scene not found: {}", currentId);
+      throw new GameException("Invalid scene: " + currentId);
+    }
 
     String nextId = current.getNextSceneMap().getOrDefault(choice, "end");
+
+    log.info("TRANSITION: {} --({})--> {}", currentId, choice, nextId);
 
     SceneData next = getScene(nextId, playerItems, foodEventUsed, favorite);
     next.setPreviousSceneId(currentId);
 
+    log.info("Next sceneId resolved: {} -> {}", currentId, nextId);
+
+    log.info("Next scene result: {}", next.getId());
     return checkRequiredItem(next, playerItems);
   }
 
   /**
-   * 指定されたシーンが
-   * プレイヤーの現在状態で進行可能か判定する。
+   * 指定シーンへの進行可否を判定します。
+   * 必須アイテム不足時は進行不可とします。
+   *
    * @param playerItems プレイヤーの所持アイテム
    * @param scene 対象シーン
    * @return 進行不可の場合 true
@@ -313,19 +355,12 @@ public class SceneService{
 
 
   /**
-   * 進行条件を満たしていない場合に表示する
-   * 共通の「ブロック用シーン」を生成する。
+   * 進行不可時に表示するブロック用シーンを生成します。
    *
-   * @return 進行不可時に表示する SceneData
+   * @return ブロック用 SceneData
    */
   private SceneData createBlockedScene() {
-      SceneData blocked = new SceneData("blocked","何かが足りないようだ…（進めない）");
-      blocked.setChoices(List.of("戻る"));
-
-      blocked.setNextSceneMap(Map.of("戻る","backcave"));
-
-      scenes.put("blocked", blocked);
-      return blocked;
+    return scenes.get("blocked");
   }
 
   /**
@@ -339,6 +374,9 @@ public class SceneService{
    */
   private SceneData checkRequiredItem(SceneData scene, Set<String> playerItems) {
     if (isBlocked(playerItems, scene)) {
+      log.warn("Blocked: scene={}, required={}, items={}",
+          scene.getId(), scene.getRequiredItem(), playerItems);
+
       return createBlockedScene();
     }
     return scene;

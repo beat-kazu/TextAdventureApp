@@ -9,10 +9,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import plugin.textadventureapp.data.PlayerData;
 import org.springframework.ui.Model;
 import plugin.textadventureapp.service.PlayerService;
+import lombok.extern.slf4j.Slf4j;
 
 /**
- * ブラウザとのプレーヤー登録リクエスト(POST/GET)を処理するクラス
+ * プレイヤー登録画面の表示とユーザー登録処理を行うControllerクラスです。
  */
+@Slf4j
 @Controller
 public class PlayerController {
 
@@ -20,8 +22,10 @@ public class PlayerController {
   private PlayerService service;
 
   /**
-   * プレイヤー登録フォームをブラウザに表示する処理をするメソッド
-   * @param model　画面(ブラウザ)にデータを渡すためのオブジェクト
+   * プレイヤー登録画面を表示します。
+   *
+   * 登録フォーム用のPlayerDataを生成し、画面へ渡します。
+   * @param model　画面表示用データを格納するModel
    * @return　プレイヤー登録画面（register.html）
    */
   @GetMapping("/register")
@@ -31,17 +35,21 @@ public class PlayerController {
   }
 
   /**
-   *　入力されたプレイヤー情報を登録処理を行うメソッド
-   * @param player　プレイヤー情報
-   * @param model　画面(ブラウザ)にデータを渡すためのオブジェクト
-   * @return　登録成功時はログイン画面(login.html)、失敗時は登録画面(register.html(エラーメッセージ))
+   *　入力されたプレイヤー情報を登録します。
+   * 登録成功時はログイン画面へ遷移し、登録失敗時はエラーメッセージを設定して
+   * 登録画面を再表示します。
+   * @param player　登録対象のプレイヤー情報
+   * @param model　画面表示用データを格納するModel
+   * @return　登録成功時はログイン画面（login.html）、登録失敗時は登録画面（register.html）
    */
   @PostMapping("/register")
   public String register(@ModelAttribute("player") PlayerData player, Model model) {
 
+    log.info("Controller: register start");
     try {
       service.registerPlayer(player);
       model.addAttribute("message", "登録が完了しました！");
+      log.info("Controller: register after service");
       return "login";
     } catch (IllegalArgumentException e) {
       model.addAttribute("message", e.getMessage());
