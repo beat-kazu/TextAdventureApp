@@ -1,6 +1,8 @@
 ## はじめに
 * 本リポジトリはJava学習者のかず(Xアカウント：@kaz_jef_endber)が作った  
 Webアプリゲーム「テキストアドベンチャーゲーム」に関するものです。  
+* ログイン認証・ゲストプレイ・セーブ / ロード機能を実装し、
+Session と DB を利用したゲーム状態管理を行っています。
 * ご利用に関するトラブル等の責任は一切負いかねます。 
 * ※ 本アプリは「Spring Boot を用いた状態管理・責務分離の理解」を目的として制作しました。
 
@@ -15,8 +17,9 @@ Webアプリゲーム「テキストアドベンチャーゲーム」に関す�
 
 
 ## 目次
-* [コンセプト](#コンセプト)
 * [アプリ概要](#アプリ概要)
+* [使用技術](#使用技術)
+* [コンセプト](#コンセプト)
 * [全体構成図（設計）](#全体構成図設計)
 * [レイヤごとの責務](#レイヤごとの責務)
 * [ゲーム進行の状態遷移](#ゲーム進行の状態遷移)
@@ -24,13 +27,50 @@ Webアプリゲーム「テキストアドベンチャーゲーム」に関す�
 * [技術選定理由](#技術選定理由)
 * [テスト方針 / 単体テスト](#テスト方針--単体テスト)
 * [デモ動画](#デモ動画)
-* [環境](#環境)
+
 * [データベース構成](#データベース構成)
 * [ゲームの流れ](#ゲームの流れ)
+* [改善・安定化対応](#改善安定化対応)
 * [苦労した点](#苦労した点)
 * [今後実装してみたい機能](#今後実装してみたい機能)
 * [おわりに](#おわりに)
 
+## アプリ概要
+*  テキストベースのファンタジー風アドベンチャーゲーム
+*  選択肢を選びながらゴールを目指す
+*  ログインユーザーは進行状況を保存可能
+*  ゲストプレイにも対応
+
+
+## 使用技術
+### Backend
+* Java 21
+* Spring Boot 3.5
+* Spring Security
+* Spring MVC
+* Thymeleaf
+
+### Database
+* MySQL
+* H2 Database（Render デプロイ用）
+
+### Frontend
+* HTML
+* CSS
+* JavaScript（Fetch API）
+
+### Infrastructure / Deploy
+* Render
+* Docker
+* GitHub
+
+### Test
+* JUnit 5
+* Mockito
+
+### Development Environment
+* IntelliJ IDEA
+* Windows 11
 
 ## コンセプト
 * webブラウザ上で遊ぶテキストアドベンチャーゲームです。  
@@ -43,13 +83,6 @@ Webアプリゲーム「テキストアドベンチャーゲーム」に関す�
     - シーン選択による状態遷移
     - アイテム・イベントフラグによる分岐制御
     - セーブ / ロードによる状態の永続化
-
-
-## アプリ概要
-*  テキストベースのファンタジー風アドベンチャーゲーム
-*  選択肢を選びながらゴールを目指す
-*  ログインユーザーは進行状況を保存可能
-*  ゲストプレイにも対応
 
 ## 全体構成図（設計）
 
@@ -144,41 +177,44 @@ Service 層を中心に単体テストを実施しました。
     - JUnit 5
     - Mockito（一部依存のスタブ化）
 
-
-
 ## デモ動画
 * ユーザー登録→ゲーム開始
 * https://github.com/user-attachments/assets/45dab199-a35a-44cf-9aa6-4c5391bba542
-
  
 
 * ゲストプレイ→ゲーム開始
 * https://github.com/user-attachments/assets/7d6bf956-5ce2-4dd2-a47a-da423531150c
 
-
-
-
-## 環境
-| ツール、環境  | バージョン  |
-| ------------- | ------------- |
-| 設計言語  | Oracle JDK Java21  |
-| 作業環境  | Windows 11(24H2)  |
-| MySql  |  8.0.42  |
-| Spring Boot  | 3.5.6  |
-| デプロイ環境  | Render  |
-
 ## データベース構成
+### player_data
+
+| カラム | 内容 |
+|---|---|
+| username | ログインID |
+| password | BCrypt化パスワード |
+| nickname | 表示用プレイヤー名 |
+| favorite | 好物イベント用 |
+
 * データベース内構造(プレーヤー情報)
-<img width="640" height="480" alt="image" src="https://github.com/user-attachments/assets/68e41036-a4d6-4634-8591-be046570a047" />
+<img width="640" alt="image" src="https://github.com/user-attachments/assets/68e41036-a4d6-4634-8591-be046570a047" />
 
 * 実際の表示例(プレーヤー情報)
-<img width="640" height="480" alt="image" src="https://github.com/user-attachments/assets/b5dfa28f-2785-46c0-943f-60c5bdbe33d7" />
+<img width="640" alt="image" src="https://github.com/user-attachments/assets/b5dfa28f-2785-46c0-943f-60c5bdbe33d7" />
+
+### save_data
+
+| カラム | 内容 |
+|---|---|
+| current_scene_id | 現在シーン |
+| previous_scene_id | 直前シーン |
+| items | 所持アイテム(JSON) |
+| flags | イベントフラグ(JSON) |
 
 * データベース内構造(セーブデータ)
-<img width="640" height="480" alt="image" src="https://github.com/user-attachments/assets/25fcd494-0edb-410f-b806-871b58975624" />
+<img width="640"  alt="image" src="https://github.com/user-attachments/assets/25fcd494-0edb-410f-b806-871b58975624" />
 
 * 実際の表示例(セーブデータ)
-<img width="640" height="480" alt="image" src="https://github.com/user-attachments/assets/9ef5d1e7-ee0e-42ec-a0ff-4c38db0fd506" />
+<img width="640"  alt="image" src="https://github.com/user-attachments/assets/9ef5d1e7-ee0e-42ec-a0ff-4c38db0fd506" />
 
 ## ゲームの流れ
 1. ログインまたはゲストとして開始
@@ -186,19 +222,79 @@ Service 層を中心に単体テストを実施しました。
 3. 状況に応じてイベントが分岐
 4. エンディング(GameOver表示)に到達すると終了
 
+## 改善・安定化対応
+本アプリは初期実装後、
+状態管理・責務分離・例外処理の観点から
+段階的にリファクタリングを行いました。
+
+### 実施した改善
+* JSON変換処理の共通化
+    - ObjectMapper の乱立を廃止
+    - JsonUtils に統一
+* セッションとDB状態の不整合修正
+    - pendingReward を導入
+    - 「ロードせず所持している」問題を修正
+
+* イベントフラグ管理の整理
+    - save_data.flags を状態管理の主軸へ統一
+    - session → DB → load復元 の流れへ整理
+
+* 例外処理の改善
+    - GlobalExceptionHandler を追加
+    - GameException による業務例外整理
+
+* ログ出力整理
+    - INFO / WARN / ERROR を使い分け
+    - シーン遷移・セーブ処理を記録
+
 ## 苦労した点
-* アイテム所持状態によるルート分岐の実装
-* セッション破棄・再ログイン時の挙動を整理する必要があり、設計を見直しました
+### セッション状態とDB状態の整合性
+ゲーム進行中の状態を
+Session と DB の両方で管理しているため、
+
+* セーブ直前の状態
+* ロード後の状態
+* ゲストプレイ状態
+
+の整合性維持に苦労しました。
+
+特に、
+「画面上では取得済みだが、
+ロードしていないためDB未保存」
+という状態不整合が発生したため、
+
+pendingReward を導入し、
+取得確定タイミングを整理しました。
+
+### 責務分離
+
+初期実装では Controller に
+状態更新ロジックが混在していました。
+
+そのため、
+
+* SceneService
+* SaveDataService
+* FavoriteService
+* JsonUtils
+
+へ責務を分離し、
+保守性改善を行いました。
 
 ## 今後実装してみたい機能
-* 分岐エンディング
-* 選択肢の DB 管理
-* ログ出力（ロギング）機能の導入  
-  - 実装時にはデバッグ用途のログを出力していた(現在は削除)
-  - 実践的なシステムを想定し、  
-    シーン遷移、セーブ / ロード処理、意図しない動作が発生した時などを  
-    ログとして記録できるよう改善したい  
-  - ログレベル（INFO / WARN / ERROR）を意識した設計を検討中
+* シーン情報の DB 管理化
+    - 現在はコード内で管理
+    - 将来的には動的追加可能な構成へ改善予定
+
+* テスト拡充
+    - Controller 層テスト
+    - 異常系テスト
+    - MockMvc 導入
+
+* ログ改善
+    - ファイル出力
+    - リクエスト単位の追跡
+    - 本番運用を想定したログ設計
 
 ## おわりに
 * Java学習のアウトプットとして、本リポジトリを公開しました
