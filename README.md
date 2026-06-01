@@ -153,6 +153,31 @@ stateDiagram-v2
     - セッションと DB を分離
     - ゲストプレイ時は DB 保存しない
 
+### 状態管理方針
+
+本アプリでは、
+
+- Session：プレイ中の一時状態
+- save_data：ゲーム進行状態の永続化
+
+として責務を分離しています。
+
+#### Session
+
+- playerItems
+- pendingReward
+- guestMode
+- foodEventUsed
+
+#### save_data
+
+- currentSceneId
+- items
+- flags
+
+ロード時には save_data の内容を Session に復元し、
+ゲーム状態を再構築します。
+
 ## 技術選定理由
 * Spring Boot：MVC 構造と責務分離を学ぶため
 * Spring Security：認証・ゲスト切替の理解
@@ -246,6 +271,10 @@ Service 層を中心に単体テストを実施しました。
 * ログ出力整理
     - INFO / WARN / ERROR を使い分け
     - シーン遷移・セーブ処理を記録
+
+* 定数管理の整理
+    - SessionKeys を導入し Session 属性名を集約
+    - SceneIds を導入しシーンIDのマジックストリングを排除
 
 ## 苦労した点
 ### セッション状態とDB状態の整合性
